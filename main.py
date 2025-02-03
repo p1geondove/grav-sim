@@ -5,8 +5,9 @@ import pygame
 from pygame.locals import *
 from pygame import Vector2 as Vec2
 import random
-from itertools import combinations
+from itertools import combinations, pairwise
 from functools import reduce
+import constants
 
 class Ball:
     def __init__(self, radius:float = None, position:Vec2 = None, velocity:Vec2 = None):
@@ -173,8 +174,8 @@ class Slider:
         pos_x = (self.end - self.pos) / (self.end - self.start) * self.rect.width
         rect_hori = pygame.Rect(0,self.rect.height/2-2,self.rect.width,4)
         rect_vert = pygame.Rect(pos_x-5, 0, 10, self.rect.height)
-        pygame.draw.rect(self.surface, 'grey50', rect_hori, 0, 2)
-        pygame.draw.rect(self.surface, 'grey70', rect_vert, 0, 4)
+        pygame.draw.rect(self.surface, constants.Colors.slider_hori, rect_hori, 0, 2)
+        pygame.draw.rect(self.surface, constants.Colors.slider_vert, rect_vert, 0, 4)
     
     def handle_event(self, event:pygame.Event):
         if event.type == MOUSEBUTTONDOWN:
@@ -191,24 +192,28 @@ class Slider:
             self.pos = min(max(self.start, self.pos), self.end)
             return ['draw']
 
-class PlayGround:
+class Playground:
     class draw_infos:
-        def draw_traj(self:Ball):
-            for line in self.trajectories(300, self.dt, self.surface.get_rect()):
-                pygame.draw.aalines(self.surface, 'orange', False, line)
+        def draw_traj(self:Playground):
+            for line in self.trajectories(300):
+                for p1, p2 in pairwise(line):
+                    color = constants.Colors.trail.lerp(constants.Colors.background, p2[1])
+                    pygame.draw.aaline(self.surface, color, p1[0], p2[0])
 
-        def draw_center(self:Ball):
+        def draw_center(self:Playground):
             mass = [b.radius**2 for b in self.balls]
             pos = [b.pos.copy() for b in self.balls]
             r = reduce(lambda x,y : x+y, (m*p for m,p in zip(mass,pos)))
             d = reduce(lambda x,y : x+y, mass)
-            pygame.draw.circle(self.surface, 'red', r/d,3)
+            pygame.draw.aacircle(self.surface, constants.Colors.center2, r/d, 9, 0, True, False, True, False)
+            # pygame.draw.aacircle(self.surface, constants.Colors.center, r/d, 10, 0, False, True, False, True)
+            pygame.draw.aacircle(self.surface, constants.Colors.center, r/d, 10, 1)
 
-        def draw_vel(self:Ball):
+        def draw_vel(self:Playground):
             for ball in self.balls:
                 pygame.draw.aaline(self.surface, '#4e9c60', ball.pos, ball.pos + ball.vel*30)
 
-        def draw_grid(self:Ball):
+        def draw_grid(self:Playground):
             if self.mouse_pos is None: return
             grid_radius = 100
 
@@ -216,10 +221,15 @@ class PlayGround:
                 for x in range(-grid_radius, grid_radius+1, self.grid_size):
                     distance = Vec2(x,y).magnitude() / grid_radius
                     if distance > 1: continue
-                    color = pygame.Color('orange').lerp('grey15',distance)
+                    color = constants.Colors.grid.lerp(constants.Colors.background,distance)
                     pos_x = x + self.mouse_pos.x - self.mouse_pos.x % self.grid_size + self.grid_size/2
                     pos_y = y + self.mouse_pos.y - self.mouse_pos.y % self.grid_size + self.grid_size/2
                     pygame.draw.aacircle(self.surface, color, (pos_x,pos_y), 1)
+
+        def debug_txt(self:Playground):
+            amt_txt = constants.Fonts.medium.render(f'{len(self.balls)} : amt balls',True,constants.Colors.debug_txt)
+            pos = self.surface.width - amt_txt.width, 0
+            self.surface.blit(amt_txt,pos)
 
         functions = [
             ('trajectory', draw_traj),
@@ -237,10 +247,6 @@ class PlayGround:
         self.dt = 1
         self.mouse_pos = None
         self.grid_size = 20
-
-        self.color_active = pygame.Color('#47914f')
-        self.color_inactive = pygame.Color('#994946')
-
         self.draw_map = {n: [f, False] for n,f in self.draw_infos.functions}
         self.balls: list[Ball] = [Ball() for _ in range(self.amt_balls)]
         self.buttons = [Button((5, 5 + y*30), name) for y, name in enumerate(self.draw_map)]
@@ -267,15 +273,17 @@ class PlayGround:
 
             if active:
                 func(self)
-                button.color = self.color_active
+                button.color = constants.Colors.active
             else:
-                button.color = self.color_inactive
+                button.color = constants.Colors.inactive
             
             button.draw()
             self.surface.blit(button.surface, button.pos)
 
         self.slider.draw()
         self.surface.blit(self.slider.surface, self.slider.rect.topleft)
+
+        self.draw_infos.debug_txt(self)
 
         self.window.blit(self.surface, (0,0))
 
@@ -329,7 +337,22 @@ class PlayGround:
         for ball in self.balls:
             ball.update(self.dt)
 
-    def trajectories(self, steps:int, dt:float, domain:pygame.Rect=None) -> list[list[Vec2]]:
+    def trajectories(self, steps:int) -> list[list[tuple[Vec2, float]]]:
+        """
+        # generates path of balls in the future
+
+        Parameters
+        ---
+        steps : int
+            amount of steps into the future
+
+        Returns
+        ---
+        list[list[tuple[Vec2, float]]]
+            list of line segments
+            a line segment is a list of positions and lerp floats
+            the lerp float represents the distance along the generated path [0->1]
+        """
         balls:list[Ball] = []
         for ball in self.balls:
             balls.append(
@@ -348,10 +371,10 @@ class PlayGround:
                 b2.force(b1)
 
             for idx, ball in enumerate(balls):
-                ball.update(dt)
-                if domain:
-                    ball.pos.x = (ball.pos.x - domain.left) % domain.width + domain.left
-                    ball.pos.y = (ball.pos.y - domain.top) % domain.height + domain.top
+                ball.update(self.dt)
+                if self.domain:
+                    ball.pos.x = (ball.pos.x - self.domain.left) % self.domain.width + self.domain.left
+                    ball.pos.y = (ball.pos.y - self.domain.top) % self.domain.height + self.domain.top
 
                 lines[idx].append(ball.pos.copy())
 
@@ -364,15 +387,15 @@ class PlayGround:
                     break    
                 idx += 1
 
-            segments = [[line[idx]]]  
-            for pos in line[1:]:
-                distance = pos.distance_to(segments[-1][-1])
+            segments = [[(line[idx],0)]]  
+            for idx, pos in enumerate(line[1:]):
+                distance = pos.distance_to(segments[-1][-1][0])
                 if 2 < distance < 100:
-                    segments[-1].append(pos)
+                    segments[-1].append((pos, idx/steps))
                 elif distance > 100:
                     if len(segments[-1]) > 1:
-                        segments.append([pos])
-            segments[-1].append(pos)
+                        segments.append([(pos,idx/steps)])
+            segments[-1].append((pos,1))
             all_segments.extend(segments)
 
         return all_segments
@@ -391,7 +414,7 @@ def main():
     # random.seed(0)
     winsize = pygame.Vector2(800, 800)
     window = pygame.display.set_mode(winsize, RESIZABLE)
-    playground = PlayGround(window)
+    playground = Playground(window)
     clock = pygame.Clock()
 
     while True:
