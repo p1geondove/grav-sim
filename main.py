@@ -15,7 +15,7 @@ import ui_elements
 class Playground:
     class draw_infos:
         def draw_traj(self:Playground):
-            for line in self.trajectories(300):
+            for line in self.trajectories(self.trail_size):
                 for p1, p2 in pairwise(line):
                     color = constants.Colors.trail.lerp(constants.Colors.background, p2[1])
                     pygame.draw.aaline(self.surface, color, p1[0], p2[0])
@@ -68,11 +68,16 @@ class Playground:
         self.dt = 1
         self.mouse_pos = None
         self.grid_size = 20
+        self.trail_size = 300
         self.draw_map = {n: [f, False] for n,f in self.draw_infos.functions}
         self.balls: list[ui_elements.Ball] = [ui_elements.Ball() for _ in range(self.amt_balls)]
         self.buttons = [ui_elements.Button((5, 5 + y*30), name) for y, name in enumerate(self.draw_map)]
-        self.slider = ui_elements.Slider((0,self.surface.height-20,100,20),0.01, 1)
-
+        self.sliders = [
+            ui_elements.Slider((5, self.surface.height-35, 100, 30), 0.005, 1),
+            ui_elements.Slider((5, self.surface.height-70, 100, 30), 10, 1000)
+        ]
+        
+        # self.slider = ui_elements.Slider((0,self.surface.height-20,100,20),0.01, 1)
         self.draw()
 
     def draw(self):
@@ -101,8 +106,9 @@ class Playground:
             button.draw()
             self.surface.blit(button.surface, button.pos)
 
-        self.slider.draw()
-        self.surface.blit(self.slider.surface, self.slider.rect.topleft)
+        for slider in self.sliders:
+            slider.draw()
+            self.surface.blit(slider.surface, slider.rect.topleft)
 
         self.draw_infos.debug_txt(self)
 
@@ -127,10 +133,18 @@ class Playground:
         elif event.type == VIDEORESIZE:
             self.domain = pygame.Rect((0,0),event.size)
             self.surface = pygame.Surface(self.domain.size)
-            self.slider.rect = pygame.Rect(0,self.surface.height-20,100,20)
+            sliders = [
+                ui_elements.Slider((5, self.surface.height-35, 100, 30), 0.005, 1),
+                ui_elements.Slider((5, self.surface.height-70, 100, 30), 10, 1000)
+            ]
+
+            for old, new in zip(self.sliders, sliders):
+                new.pos = old.pos
+
             for ball in self.balls:
                 ball.pos.x = ball.pos.x % self.surface.width
                 ball.pos.y = ball.pos.y % self.surface.height
+
             self.draw()
 
         elif event.type == MOUSEMOTION:
@@ -144,10 +158,13 @@ class Playground:
             if button.handle_event(event):
                 self.draw_map[button.text][1] = not self.draw_map[button.text][1]
                 self.draw()
-    
-        if self.slider.handle_event(event):
-            self.dt = self.slider.pos
+
+        if self.sliders[0].handle_event(event):
+            self.dt = self.sliders[0].pos
             self.draw()
+        
+        if self.sliders[1].handle_event(event):
+            self.trail_size = int(self.sliders[1].pos)
 
     def update(self):
         for b1, b2 in combinations(self.balls, 2):
