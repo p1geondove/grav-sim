@@ -2,7 +2,9 @@ from __future__ import annotations
 import sys
 import os
 import pygame
+import pygame.gfxdraw
 from pygame.locals import *
+from pygame import gfxdraw
 from pygame import Vector2 as Vec2
 import random
 from itertools import combinations, pairwise
@@ -70,7 +72,7 @@ class Ball:
         self.pos += self.vel * dt
         self.acc = Vec2(0)
 
-    def handle_event(self, event):
+    def handle_event(self, event, grid_size:int):
         if event.type == MOUSEBUTTONDOWN:
             if Vec2(event.pos - self.pos).magnitude() < self.radius:
                 if event.button == 1:
@@ -88,33 +90,31 @@ class Ball:
         elif event.type == MOUSEMOTION:
             if self.pressed_left and self.pressed_right:
                 if self.pressed_ctrl:
-                    print(self.radius)
-                    grid_size = 20
-                    x,y = self.pos - event.pos + Vec2(grid_size/2)
+                    x, y = self.pos - event.pos + Vec2(grid_size/2)
                     x = x - x % grid_size
                     y = y - y % grid_size
                     self.radius = Vec2(x,y).magnitude()
-                    # self.radius = self.radius - self.radius & grid_size
-                    print(self.radius)
                 else:
                     self.radius += sum(Vec2(event.rel))
                 self.radius = min(max(1,self.radius),10000)
 
             elif self.pressed_left:
                 if self.pressed_ctrl:
-                    grid_size = 20
-                    x = event.pos[0] + grid_size/2 - event.pos[0] % grid_size
-                    y = event.pos[1] + grid_size/2 - event.pos[1] % grid_size
+                    x, y = event.pos + Vec2(grid_size/2)
+                    x = x - x % grid_size
+                    y = y - y % grid_size
                     self.pos = Vec2(x,y)
+                    # x = event.pos[0] + grid_size/2 - event.pos[0] % grid_size
+                    # y = event.pos[1] + grid_size/2 - event.pos[1] % grid_size
+                    # self.pos = Vec2(x,y)
                 else:
                     self.pos += Vec2(event.rel)
 
             elif self.pressed_right:
                 if self.pressed_ctrl:
-                    grid_size = 20
-                    x,y = self.pos - event.pos
-                    x = x-x%10
-                    y = y-y%10
+                    x, y = self.pos - event.pos + Vec2(grid_size/2)
+                    x = x - x % grid_size
+                    y = y - y % grid_size
                     self.vel = -Vec2(x,y) / 30
                 else:
                     self.vel += Vec2(event.rel) / 30
@@ -222,9 +222,9 @@ class Playground:
                     distance = Vec2(x,y).magnitude() / grid_radius
                     if distance > 1: continue
                     color = constants.Colors.grid.lerp(constants.Colors.background,distance)
-                    pos_x = x + self.mouse_pos.x - self.mouse_pos.x % self.grid_size + self.grid_size/2
-                    pos_y = y + self.mouse_pos.y - self.mouse_pos.y % self.grid_size + self.grid_size/2
-                    pygame.draw.aacircle(self.surface, color, (pos_x,pos_y), 1)
+                    pos_x = x + self.mouse_pos.x - self.mouse_pos.x % self.grid_size
+                    pos_y = y + self.mouse_pos.y - self.mouse_pos.y % self.grid_size
+                    pygame.gfxdraw.pixel(self.surface, int(pos_x), int(pos_y), color)
 
         def debug_txt(self:Playground):
             amt_txt = constants.Fonts.medium.render(f'{len(self.balls)} : amt balls',True,constants.Colors.debug_txt)
@@ -316,7 +316,7 @@ class Playground:
             self.mouse_pos = Vec2(event.pos)
 
         for ball in self.balls:
-            if ball.handle_event(event):
+            if ball.handle_event(event, self.grid_size):
                 self.draw()
         
         for button in self.buttons:
