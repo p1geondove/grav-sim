@@ -16,8 +16,20 @@ It only supports Circles, at least as of now.
 
 **LMB + RMB** change radius
 
+**CTRL** snaps to grid (position and velocity)
+
 ---
 
 The buttons on top left indicate some extra info to draw
 
 The slider bottom left is used for dt / simulation speed
+
+---
+
+## TODO
+
+Seperate world and screen space
+
+Add camera object
+
+Draw background grid

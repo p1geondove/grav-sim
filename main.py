@@ -9,23 +9,22 @@ from itertools import combinations
 from functools import reduce
 
 class Ball:
-    def __init__(self, surface: pygame.Surface, radius:float = None, position:Vec2 = None, velocity:Vec2 = None):
-        self.surface = surface
-
+    def __init__(self, radius:float = None, position:Vec2 = None, velocity:Vec2 = None):
         if radius is None:
             self.radius = random.uniform(5,50)
         else: self.radius = radius
 
         if position is None:
             self.pos = Vec2(
-                random.uniform(self.radius, surface.width-self.radius),
-                random.uniform(self.radius, surface.height-self.radius))
+                random.uniform(0, 500),
+                random.uniform(0, 500))
         else: self.pos = Vec2(position)
 
         if velocity is None:
-            self.vel = Vec2(random.uniform(-5, 5), random.uniform(-5, 5)) * 0.01
+            self.vel = Vec2(random.uniform(-5, 5), random.uniform(-5, 5))
         else: self.vel = Vec2(velocity)
 
+        self.surface = pygame.Surface(Vec2(self.radius*2), SRCALPHA)
         self.color = pygame.Color([int(random.uniform(0, 255)) for _ in range(3)])
         self.acc = Vec2(0)
         self.pressed_left = False
@@ -38,15 +37,14 @@ class Ball:
         distance_squared = impact_vector.magnitude_squared()
         combined_radius = self.radius + other.radius
 
-        # self.touching = True
-        if distance_squared > combined_radius ** 2:
-            self.touching = True
-            if (distance_squared - combined_radius ** 2) ** 0.5 > 1:
-                self.touching = False
+        if distance_squared > combined_radius ** 2: return
+            # self.touching = True
+            # if (distance_squared - combined_radius ** 2) ** 0.5 > 1:
+                # self.touching = False
 
-        if not self.touching:
-            self.touching = True  
-            return
+        # if not self.touching:
+        #     self.touching = True  
+        #     return
 
         distance = impact_vector.magnitude()
         overlap = combined_radius - distance
@@ -69,6 +67,7 @@ class Ball:
 
     def force(self, other: Ball):
         impact_vector = other.pos - self.pos
+        if impact_vector.x + impact_vector.y == 0: return
         force = (self.radius**2 * other.radius**2) / self.pos.distance_to(other.pos)**2
         self.acc += impact_vector.normalize() * force / self.radius**2
 
@@ -76,8 +75,8 @@ class Ball:
         self.vel += self.acc * dt
         self.pos += self.vel * dt
         self.acc = Vec2(0)
-        self.pos.x = self.pos.x % self.surface.get_width()
-        self.pos.y = self.pos.y % self.surface.get_height()
+        # self.pos.x = self.pos.x % self.domain.width
+        # self.pos.y = self.pos.y % self.domain.height
 
     def handle_event(self, event):
         if event.type == MOUSEBUTTONDOWN:
@@ -129,7 +128,9 @@ class Ball:
                 self.pressed_ctrl = False
 
     def draw(self):
-        pygame.draw.aacircle(self.surface, self.color, (int(self.pos.x), int(self.pos.y)), self.radius, 2)
+        surface = pygame.Surface(Vec2(self.radius*2), SRCALPHA)
+        pygame.draw.aacircle(surface, self.color, (self.radius, self.radius), self.radius, 2)
+        return surface
 
 class Button:
     def __init__(self, pos:pygame.Rect, text:str = 'button'):
@@ -190,66 +191,72 @@ class Slider:
             return ['draw']
 
 class PlayGround:
-    def __init__(self, surface:pygame.Surface):
+    def __init__(self, window:pygame.Surface):
         pygame.font.init()
-        self.surface = surface
+        self.window = window
+        self.surface = window.copy()
+        self.domain = window.get_rect()
         self.amt_balls = 3
-        self.balls: list[Ball] = [Ball(surface) for _ in range(self.amt_balls)]
-        self.buttons: list[Button] = [
-            Button((5,5),'trajectory'),
-            Button((5,30),'center'),
-            Button((5,55),'velocity')
-        ]
-        self.slider = Slider((0,surface.height-20,100,20),0.01, 1)
         self.playing = False
-        self.mode_active = [False]*len(self.buttons)
         self.dt = 1
-        self.draw_map = []
+
         self.color_active = pygame.Color('#47914f')
         self.color_inactive = pygame.Color('#994946')
+
+        self.draw_map = {
+            'trajectory' : [self.draw_traj, False],
+            'center' : [self.draw_center, False],
+            'velocity' : [self.draw_vel, False],
+        }
+
+        self.balls: list[Ball] = [Ball() for _ in range(self.amt_balls)]
+        self.buttons = [Button((5, 5 + y*30), name) for y, name in enumerate(self.draw_map)]
+        self.slider = Slider((0,self.surface.height-20,100,20),0.01, 1)
+
         self.draw()
 
+    def draw_traj(self):
+        for line in self.trajectories(300, self.dt, self.surface.get_rect()):
+            pygame.draw.aalines(self.surface, 'orange', False, line)
+
+    def draw_center(self):
+        mass = [b.radius**2 for b in self.balls]
+        pos = [b.pos.copy() for b in self.balls]
+        r = reduce(lambda x,y : x+y, (m*p for m,p in zip(mass,pos)))
+        d = reduce(lambda x,y : x+y, mass)
+        pygame.draw.circle(self.surface, 'red', r/d,3)
+
+    def draw_vel(self):
+        for ball in self.balls:
+            pygame.draw.line(self.surface, '#4e9c60', ball.pos, ball.pos + ball.vel*30)
+
     def draw(self):
-        def draw_traj():
-            for line in self.trajectories(300, self.dt):
-                pygame.draw.aalines(self.surface, 'orange', False, line)
-
-        def draw_center():
-            mass = [b.radius**2 for b in self.balls]
-            pos = [b.pos.copy() for b in self.balls]
-            r = reduce(lambda x,y : x+y, (m*p for m,p in zip(mass,pos)))
-            d = reduce(lambda x,y : x+y, mass)
-            pygame.draw.circle(self.surface, 'red', r/d,3)
-
-        def draw_vel():
-            for ball in self.balls:
-                pygame.draw.line(self.surface, '#4e9c60', ball.pos, ball.pos + ball.vel*30)
-
         if self.playing:
             self.update()
 
-        self.draw_map = [
-            draw_traj,
-            draw_center,
-            draw_vel,
-        ]
-
         self.surface.fill('grey15')
 
-        for draw, active in zip(self.draw_map, self.mode_active):
-            if active: draw()
-
         for ball in self.balls:
-            ball.draw()
-        
-        for idx, button in enumerate(self.buttons):
-            button.color = self.color_active if self.mode_active[idx] else self.color_inactive
+            ball.pos.x = ball.pos.x % self.surface.width
+            ball.pos.y = ball.pos.y % self.surface.height
+            self.surface.blit(ball.draw(), ball.pos-Vec2(ball.radius))
+
+        for button in self.buttons:
+            func, active = self.draw_map[button.text]
+
+            if active:
+                func()
+                button.color = self.color_active
+            else:
+                button.color = self.color_inactive
+            
             button.draw()
             self.surface.blit(button.surface, button.pos)
 
         self.slider.draw()
         self.surface.blit(self.slider.surface, self.slider.rect.topleft)
-        # print(self.slider.rect.topleft)
+
+        self.window.blit(self.surface, (0,0))
 
     def handle_event(self, event:pygame.Event):
         calls = []
@@ -265,16 +272,24 @@ class PlayGround:
                         del self.balls[idx]
                         break
                 else:
-                    self.balls.append(Ball(self.surface, position=event.pos))
+                    self.balls.append(Ball(position=event.pos))
+
+        elif event.type == VIDEORESIZE:
+            self.domain = pygame.Rect((0,0),event.size)
+            self.surface = pygame.Surface(self.domain.size)
+            self.slider.rect = pygame.Rect(0,self.surface.height-20,100,20)
+            for ball in self.balls:
+                ball.pos.x = ball.pos.x % self.surface.width
+                ball.pos.y = ball.pos.y % self.surface.height
+            self.draw()
 
         for ball in self.balls:
             if ball.handle_event(event):
                 self.draw()
-
-        for idx, button in enumerate(self.buttons):
+        
+        for button in self.buttons:
             if button.handle_event(event):
-                self.mode_active[idx] = not self.mode_active[idx]
-                button.color = self.color_active if self.mode_active[idx] else self.color_inactive
+                self.draw_map[button.text][1] = not self.draw_map[button.text][1]
                 self.draw()
     
         if self.slider.handle_event(event):
@@ -290,21 +305,17 @@ class PlayGround:
         for ball in self.balls:
             ball.update(self.dt)
 
-    def trajectories(self, steps:int, dt:float) -> list[list[Vec2]]:
-        new_balls:list[Ball] = []
-
+    def trajectories(self, steps:int, dt:float, domain:pygame.Rect=None) -> list[list[Vec2]]:
+        balls:list[Ball] = []
         for ball in self.balls:
-            new_balls.append(
+            balls.append(
                 Ball(
-                    surface=ball.surface,
                     position=ball.pos,
                     velocity=ball.vel,
                     radius=ball.radius
                 ))
-        balls = new_balls
             
-        lines:list[list[Vec2]] = [[] for _ in balls]
-        segments = [[b.pos.copy()] for b in balls]
+        lines:list[list[Vec2]] = [[b.pos.copy()] for b in balls]
 
         for _ in range(steps):
             for b1, b2 in combinations(balls, 2):
@@ -314,6 +325,10 @@ class PlayGround:
 
             for idx, ball in enumerate(balls):
                 ball.update(dt)
+                if domain:
+                    ball.pos.x = (ball.pos.x - domain.left) % domain.width + domain.left
+                    ball.pos.y = (ball.pos.y - domain.top) % domain.height + domain.top
+
                 lines[idx].append(ball.pos.copy())
 
         all_segments:list[list[Vec2]] = []
@@ -343,7 +358,7 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 def main():
-    random.seed(0)
+    # random.seed(0)
     winsize = pygame.Vector2(800, 800)
     window = pygame.display.set_mode(winsize, RESIZABLE)
     playground = PlayGround(window)
