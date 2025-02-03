@@ -15,18 +15,19 @@ import ui_elements
 class Playground:
     class draw_infos:
         def draw_traj(self:Playground):
+            if not self.balls: return
             for line in self.trajectories(self.trail_size):
                 for p1, p2 in pairwise(line):
                     color = constants.Colors.trail.lerp(constants.Colors.background, p2[1])
                     pygame.draw.aaline(self.surface, color, p1[0], p2[0])
 
         def draw_center(self:Playground):
+            if not self.amt_balls: return
             mass = [b.radius**2 for b in self.balls]
             pos = [b.pos.copy() for b in self.balls]
             r = reduce(lambda x,y : x+y, (m*p for m,p in zip(mass,pos)))
             d = reduce(lambda x,y : x+y, mass)
             pygame.draw.aacircle(self.surface, constants.Colors.center2, r/d, 9, 0, True, False, True, False)
-            # pygame.draw.aacircle(self.surface, constants.Colors.center, r/d, 10, 0, False, True, False, True)
             pygame.draw.aacircle(self.surface, constants.Colors.center, r/d, 10, 1)
 
         def draw_vel(self:Playground):
@@ -76,8 +77,6 @@ class Playground:
             ui_elements.Slider((5, self.surface.height-35, 100, 30), 0.005, 1),
             ui_elements.Slider((5, self.surface.height-70, 100, 30), 10, 1000)
         ]
-        
-        # self.slider = ui_elements.Slider((0,self.surface.height-20,100,20),0.01, 1)
         self.draw()
 
     def draw(self):
@@ -123,10 +122,13 @@ class Playground:
 
         elif event.type == MOUSEBUTTONDOWN:
             if event.button == 2:
-                for idx, ball in enumerate(self.balls):
-                    if ball.pos.distance_to(event.pos) < ball.radius:
-                        del self.balls[idx]
-                        break
+                if self.balls:
+                    for idx, ball in enumerate(self.balls):
+                        if ball.pos.distance_to(event.pos) < ball.radius:
+                            del self.balls[idx]
+                            break
+                    else:
+                        self.balls.append(ui_elements.Ball(position=event.pos))
                 else:
                     self.balls.append(ui_elements.Ball(position=event.pos))
 
