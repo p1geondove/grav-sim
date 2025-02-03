@@ -1,4 +1,6 @@
 from __future__ import annotations
+import sys
+import os
 import pygame
 from pygame.locals import *
 from pygame import Vector2 as Vec2
@@ -136,7 +138,8 @@ class Button:
         self.color = 'white'
 
         try:
-            font = pygame.Font('AgaveNerdFontMono-Regular.ttf',30)
+            path = resource_path('AgaveNerdFontMono-Regular.ttf')
+            font = pygame.Font(path,30)
         except:
             font = pygame.Font(None,30)
         finally:
@@ -329,10 +332,20 @@ class PlayGround:
 
         return all_segments
 
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
 def main():
     random.seed(0)
     winsize = pygame.Vector2(800, 800)
-    window = pygame.display.set_mode(winsize)
+    window = pygame.display.set_mode(winsize, RESIZABLE)
     playground = PlayGround(window)
     clock = pygame.Clock()
 
@@ -340,7 +353,7 @@ def main():
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
-                exit()
+                sys.exit()
             playground.handle_event(event)
 
         playground.draw()
