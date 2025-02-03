@@ -95,7 +95,14 @@ class Ball:
 
         elif event.type == MOUSEMOTION:
             if self.pressed_left and self.pressed_right:
-                self.radius += sum(Vec2(event.rel))
+                if self.pressed_ctrl:
+                    grid_size = 20
+                    x,y = self.pos - event.pos
+                    x = x-x%10
+                    y = y-y%10
+                    self.radius = Vec2(x,y).magnitude()
+                else:
+                    self.radius += sum(Vec2(event.rel))
 
             elif self.pressed_left:
                 if self.pressed_ctrl:
