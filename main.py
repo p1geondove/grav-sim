@@ -103,6 +103,7 @@ class Ball:
                     self.radius = Vec2(x,y).magnitude()
                 else:
                     self.radius += sum(Vec2(event.rel))
+                self.radius = min(max(1,self.radius),10000)
 
             elif self.pressed_left:
                 if self.pressed_ctrl:
@@ -168,7 +169,6 @@ class Button:
 class Slider:
     def __init__(self, rect:pygame.Rect, start:float, end:float):
         self.rect = pygame.Rect(rect)
-        # print(self.rect)
         self.start = start
         self.end = end
         self.pos = (end - start) / 2
@@ -206,6 +206,8 @@ class PlayGround:
         self.amt_balls = 3
         self.playing = False
         self.dt = 1
+        self.mouse_pos = None
+        self.grid_size = 20
 
         self.color_active = pygame.Color('#47914f')
         self.color_inactive = pygame.Color('#994946')
@@ -237,11 +239,27 @@ class PlayGround:
         for ball in self.balls:
             pygame.draw.line(self.surface, '#4e9c60', ball.pos, ball.pos + ball.vel*30)
 
+    def draw_grid(self):
+        if self.mouse_pos is None: return
+        grid_radius = 100
+
+        for y in range(-grid_radius, grid_radius+1, self.grid_size):
+            for x in range(-grid_radius, grid_radius+1, self.grid_size):
+                distance = Vec2(x,y).magnitude() / grid_radius
+                if distance > 1: continue
+                color = pygame.Color('orange').lerp('grey15',distance)
+                pos_x = x + self.mouse_pos.x - self.mouse_pos.x % self.grid_size + self.grid_size/2
+                pos_y = y + self.mouse_pos.y - self.mouse_pos.y % self.grid_size + self.grid_size/2
+                pygame.draw.aacircle(self.surface, color, (pos_x,pos_y), 1)
+
     def draw(self):
         if self.playing:
             self.update()
 
         self.surface.fill('grey15')
+
+        if any((b.pressed_ctrl for b in self.balls)):
+            self.draw_grid()
 
         for ball in self.balls:
             ball.pos.x = ball.pos.x % self.surface.width
@@ -289,6 +307,9 @@ class PlayGround:
                 ball.pos.x = ball.pos.x % self.surface.width
                 ball.pos.y = ball.pos.y % self.surface.height
             self.draw()
+
+        elif event.type == MOUSEMOTION:
+            self.mouse_pos = Vec2(event.pos)
 
         for ball in self.balls:
             if ball.handle_event(event):
@@ -341,7 +362,13 @@ class PlayGround:
         all_segments:list[list[Vec2]] = []
 
         for line in lines:
-            segments = [[line[0]]]  
+            idx = 0
+            while idx < len(line)-1:
+                if line[idx].distance_to(line[idx+1]) < 100:
+                    break    
+                idx += 1
+                
+            segments = [[line[idx]]]  
             for pos in line[1:]:
                 distance = pos.distance_to(segments[-1][-1])
                 if 2 < distance < 100:
