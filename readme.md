@@ -22,6 +22,8 @@ The buttons on top left indicate some extra info to draw
 
 The slider bottom left is used for dt / simulation speed
 
+The one above controls the trajectory length
+
 The number top right is the amount of balls
 
 ## TODO
