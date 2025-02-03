@@ -18,13 +18,10 @@ It only supports Circles, at least as of now.
 
 **CTRL** snaps to grid (position and velocity)
 
----
-
+### Hud
 The buttons on top left indicate some extra info to draw
 
 The slider bottom left is used for dt / simulation speed
-
----
 
 ## TODO
 
