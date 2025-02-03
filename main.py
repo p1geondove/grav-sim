@@ -25,7 +25,7 @@ class Ball:
         else: self.vel = Vec2(velocity)
 
         self.surface = pygame.Surface(Vec2(self.radius*2), SRCALPHA)
-        self.color = pygame.Color([int(random.uniform(0, 255)) for _ in range(3)])
+        self.color = pygame.Color.from_hsla(random.uniform(0,360),100,75,100)
         self.acc = Vec2(0)
         self.pressed_left = False
         self.pressed_right = False
@@ -96,11 +96,14 @@ class Ball:
         elif event.type == MOUSEMOTION:
             if self.pressed_left and self.pressed_right:
                 if self.pressed_ctrl:
+                    print(self.radius)
                     grid_size = 20
-                    x,y = self.pos - event.pos
-                    x = x-x%10
-                    y = y-y%10
+                    x,y = self.pos - event.pos + Vec2(grid_size/2)
+                    x = x - x % grid_size
+                    y = y - y % grid_size
                     self.radius = Vec2(x,y).magnitude()
+                    # self.radius = self.radius - self.radius & grid_size
+                    print(self.radius)
                 else:
                     self.radius += sum(Vec2(event.rel))
                 self.radius = min(max(1,self.radius),10000)
@@ -367,7 +370,7 @@ class PlayGround:
                 if line[idx].distance_to(line[idx+1]) < 100:
                     break    
                 idx += 1
-                
+
             segments = [[line[idx]]]  
             for pos in line[1:]:
                 distance = pos.distance_to(segments[-1][-1])
