@@ -6,27 +6,26 @@ It only supports Circles, at least as of now.
 
 ## Controls
 
-**Space** to pause / unpause
+| button             | action            |
+|--------------------|-------------------|
+| Space              | pause / unpause   |
+| R                  | reset velocity    |
+| Mouse Left         | change position   |
+| Mouse Right        | change velocity   |
+| Mouse Left + Right | change radius     |
+| Wheel Click        | add / remove ball |
+| ctrl               | snap to grid      |
 
-**Mouse Left** to drag the balls arround
+## Hud
 
-**Mouse Right** to change velocity
-
-**Wheel Click** add / remove ball
-
-**LMB + RMB** change radius
-
-**CTRL** snaps to grid (position and velocity)
-
-### Hud
 The buttons on top left indicate some extra info to draw
 
 The slider bottom left is used for dt / simulation speed
+
+The number top right is the amount of balls
 
 ## TODO
 
 Seperate world and screen space
 
 Add camera object
-
-Draw background grid
