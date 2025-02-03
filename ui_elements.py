@@ -156,7 +156,7 @@ class Slider:
 
     def draw(self):
         self.surface = pygame.Surface(self.rect.size, SRCALPHA)
-        pos_x = (self.end - self.pos) / (self.end - self.start) * self.rect.width
+        pos_x = (self.pos - self.start) / (self.end - self.start) * self.rect.width
         rect_hori = pygame.Rect(0,self.rect.height/2-2,self.rect.width,4)
         rect_vert = pygame.Rect(pos_x-5, 0, 10, self.rect.height)
         pygame.draw.rect(self.surface, constants.Colors.slider_hori, rect_hori, 0, 2)
@@ -164,7 +164,7 @@ class Slider:
     
     def handle_event(self, event:pygame.Event):
         if event.type == MOUSEBUTTONDOWN:
-            pos_x = (self.end - self.pos) / (self.end - self.start) * self.rect.width
+            pos_x = (self.pos - self.start) / (self.end - self.start) * self.rect.width
             rect = pygame.Rect(pos_x-5, 0, 10, self.rect.height).move(self.rect.topleft)
             if rect.collidepoint(event.pos):
                 self.pressed = True
@@ -173,6 +173,6 @@ class Slider:
             self.pressed = False
         
         elif event.type == MOUSEMOTION and self.pressed:
-            self.pos -= event.rel[0] * (self.end-self.start) / self.rect.width
+            self.pos += event.rel[0] * (self.end-self.start) / self.rect.width
             self.pos = min(max(self.start, self.pos), self.end)
             return ['draw']
