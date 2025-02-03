@@ -104,9 +104,6 @@ class Ball:
                     x = x - x % grid_size
                     y = y - y % grid_size
                     self.pos = Vec2(x,y)
-                    # x = event.pos[0] + grid_size/2 - event.pos[0] % grid_size
-                    # y = event.pos[1] + grid_size/2 - event.pos[1] % grid_size
-                    # self.pos = Vec2(x,y)
                 else:
                     self.pos += Vec2(event.rel)
 
@@ -140,15 +137,7 @@ class Button:
         self.pos = Vec2(pos)
         self.text = text
         self.color = 'white'
-
-        try:
-            path = resource_path('AgaveNerdFontMono-Regular.ttf')
-            font = pygame.Font(path,30)
-        except:
-            font = pygame.Font(None,30)
-        finally:
-            self.font = font
-            
+        self.font = constants.Fonts.large
         self.surface = self.font.render(text, True, self.color)
 
     def handle_event(self, event:pygame.Event):

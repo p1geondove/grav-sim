@@ -1,12 +1,23 @@
 import pygame
 import os
+import sys
 
 pygame.font.init()
 
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
 class Fonts:
     try:
-        pygame.Font('AgaveNerdFontMono-Regular.ttf')
-        font_name = 'AgaveNerdFontMono-Regular.ttf'
+        font_name = resource_path('AgaveNerdFontMono-Regular.ttf')
+        pygame.Font(font_name)
     except:
         font_name = pygame.font.get_default_font()
 
@@ -19,7 +30,7 @@ class Colors:
     active = pygame.Color('#4cb355')
     inactive = pygame.Color('#a74f4f')
     trail = pygame.Color('#967e1e')
-    grid = pygame.Color('#87ddff')
+    grid = pygame.Color('#5e94d1')
     debug_txt = pygame.Color('#afafaf')
 
     slider_hori = pygame.Color('grey50')
@@ -27,3 +38,5 @@ class Colors:
 
     center = pygame.Color('#7d2d8f')
     center2 = pygame.Color('#4e2158')
+
+
