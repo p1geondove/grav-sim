@@ -147,32 +147,42 @@ class Button:
         self.surface = self.font.render(self.text, True, self.color)
 
 class Slider:
-    def __init__(self, rect:pygame.Rect, start:float, end:float):
+    def __init__(self, rect:pygame.Rect, start:float, end:float, name:str='slider'):
         self.rect = pygame.Rect(rect)
         self.start = start
         self.end = end
-        self.pos = (end - start) / 2
+        self.val = (end - start) / 2
+        self.name = name
         self.pressed = False
+        self.size_hori = 2
+        self.size_vert = 5
 
     def draw(self):
-        self.surface = pygame.Surface(self.rect.size, SRCALPHA)
-        pos_x = (self.pos - self.start) / (self.end - self.start) * self.rect.width
-        rect_hori = pygame.Rect(0,self.rect.height/2-2,self.rect.width,4)
-        rect_vert = pygame.Rect(pos_x-5, 0, 10, self.rect.height)
-        pygame.draw.rect(self.surface, constants.Colors.slider_hori, rect_hori, 0, 2)
-        pygame.draw.rect(self.surface, constants.Colors.slider_vert, rect_vert, 0, 4)
+        pos_x = (self.val - self.start) / (self.end - self.start) * (self.rect.width - self.size_vert*2)
+        rect_hori = pygame.Rect(self.size_vert, self.rect.height/2-self.size_hori, self.rect.width-self.size_vert*2, self.size_hori*2)
+        rect_vert = pygame.Rect(pos_x-self.size_vert, 0, self.size_vert*2, self.rect.height)
+        text = constants.Fonts.small.render(f'{self.name}: {self.val:.2f}', True, constants.Colors.text)
+        self.surface = pygame.Surface(self.rect.size + Vec2(text.width,0), SRCALPHA)
+        self.surface.blit(self.surface,(self.rect.width,self.rect.height/2-text.height/2))
+        pygame.draw.rect(self.surface, constants.Colors.slider_hori, rect_hori, 0, self.size_hori)
+        pygame.draw.rect(self.surface, constants.Colors.slider_vert, rect_vert, 0, int(self.size_vert*0.7))
     
     def handle_event(self, event:pygame.Event):
         if event.type == MOUSEBUTTONDOWN:
-            pos_x = (self.pos - self.start) / (self.end - self.start) * self.rect.width
-            rect = pygame.Rect(pos_x-5, 0, 10, self.rect.height).move(self.rect.topleft)
-            if rect.collidepoint(event.pos):
-                self.pressed = True
+            pos_x = (self.val - self.start) / (self.end - self.start) * (self.rect.width - self.size_vert*2)
+            rect = pygame.Rect(pos_x-self.size_vert, 0, 10, self.rect.height).move(self.rect.topleft)
+            pygame.draw.rect(self.surface, 'red', rect, 1)
+            self.pressed = rect.collidepoint(event.pos)
 
         elif event.type == MOUSEBUTTONUP:
             self.pressed = False
         
         elif event.type == MOUSEMOTION and self.pressed:
-            self.pos += event.rel[0] * (self.end-self.start) / self.rect.width
-            self.pos = min(max(self.start, self.pos), self.end)
+            self.val += event.rel[0] * (self.end-self.start) / self.rect.width
+            self.val = min(max(self.start, self.val), self.end)
             return ['draw']
+
+    def copy(self):
+        slider = Slider(self.rect, self.start, self.end, self.name)
+        slider.val = self.val
+        return slider

@@ -35,3 +35,7 @@ The number top right is the amount of balls
 Seperate world and screen space
 
 Add camera object
+
+Draw circles that partly out of screen correctly
+
+Make grid size changeable

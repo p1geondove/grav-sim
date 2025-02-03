@@ -30,14 +30,12 @@ class Colors:
     active = pygame.Color('#4cb355')
     inactive = pygame.Color('#a74f4f')
     trail = pygame.Color('#967e1e')
-    vel_vector = pygame.Color('#4cb355')
+    vel_vector = pygame.Color('#4e9c60')
     grid = pygame.Color('#5e94d1')
-    debug_txt = pygame.Color('#afafaf')
+    text = pygame.Color('#afafaf')
 
     slider_hori = pygame.Color('grey50')
     slider_vert = pygame.Color('grey70')
 
     center = pygame.Color('#7d2d8f')
     center2 = pygame.Color('#4e2158')
-
-

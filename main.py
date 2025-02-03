@@ -49,7 +49,7 @@ class Playground:
                     gfxdraw.pixel(self.surface, int(pos_x), int(pos_y), color)
 
         def debug_txt(self:Playground):
-            amt_txt = constants.Fonts.medium.render(f'{len(self.balls)} : amt balls',True,constants.Colors.debug_txt)
+            amt_txt = constants.Fonts.medium.render(f'{len(self.balls)} : amt balls',True,constants.Colors.text)
             pos = self.surface.width - amt_txt.width, 0
             self.surface.blit(amt_txt,pos)
 
@@ -135,13 +135,20 @@ class Playground:
         elif event.type == VIDEORESIZE:
             self.domain = pygame.Rect((0,0),event.size)
             self.surface = pygame.Surface(self.domain.size)
-            sliders = [
-                ui_elements.Slider((5, self.surface.height-35, 100, 30), 0.005, 1),
-                ui_elements.Slider((5, self.surface.height-70, 100, 30), 10, 1000)
-            ]
 
-            for old, new in zip(self.sliders, sliders):
-                new.pos = old.pos
+            for idx, slider in enumerate(self.sliders):
+                slider.rect = pygame.Rect((5, self.surface.height-35*(idx+1), 100, 30))
+
+
+            # sliders = [
+            #     ui_elements.Slider((5, self.surface.height-35, 100, 30), 0.005, 1, 'dt'),
+            #     ui_elements.Slider((5, self.surface.height-70, 100, 30), 10, 1000, 'traj')
+            # ]
+
+            # for old, new in zip(self.sliders, sliders):
+            #     new.val = old.val
+
+            # sliders = [sli]
 
             for ball in self.balls:
                 ball.pos.x = ball.pos.x % self.surface.width
@@ -162,11 +169,11 @@ class Playground:
                 self.draw()
 
         if self.sliders[0].handle_event(event):
-            self.dt = self.sliders[0].pos
+            self.dt = self.sliders[0].val
             self.draw()
         
         if self.sliders[1].handle_event(event):
-            self.trail_size = int(self.sliders[1].pos)
+            self.trail_size = int(self.sliders[1].val)
 
     def update(self):
         for b1, b2 in combinations(self.balls, 2):
