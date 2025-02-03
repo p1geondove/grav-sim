@@ -139,17 +139,6 @@ class Playground:
             for idx, slider in enumerate(self.sliders):
                 slider.rect = pygame.Rect((5, self.surface.height-35*(idx+1), 100, 30))
 
-
-            # sliders = [
-            #     ui_elements.Slider((5, self.surface.height-35, 100, 30), 0.005, 1, 'dt'),
-            #     ui_elements.Slider((5, self.surface.height-70, 100, 30), 10, 1000, 'traj')
-            # ]
-
-            # for old, new in zip(self.sliders, sliders):
-            #     new.val = old.val
-
-            # sliders = [sli]
-
             for ball in self.balls:
                 ball.pos.x = ball.pos.x % self.surface.width
                 ball.pos.y = ball.pos.y % self.surface.height
@@ -185,32 +174,15 @@ class Playground:
             ball.update(self.dt)
 
     def trajectories(self, steps:int) -> list[list[tuple[Vec2, float]]]:
-        """
-        # generates path of balls in the future
-
-        Parameters
-        ---
-        steps : int
-            amount of steps into the future
-
-        Returns
-        ---
-        list[list[tuple[Vec2, float]]]
-            list of line segments
-
-            a line segment is a list of positions and lerp floats
-
-            the lerp float represents the distance along the generated path [0->1]
-        """
-        balls:list[ui_elements.Ball] = []
-        for ball in self.balls:
-            balls.append(
-                ui_elements.Ball(
-                    position=ball.pos,
-                    velocity=ball.vel,
-                    radius=ball.radius
-                ))
-            
+        # balls:list[ui_elements.Ball] = []
+        # for ball in self.balls:
+        #     balls.append(
+        #         ui_elements.Ball(
+        #             position=ball.pos,
+        #             velocity=ball.vel,
+        #             radius=ball.radius
+        #         ))
+        balls = [ball.copy() for ball in self.balls]
         lines:list[list[Vec2]] = [[b.pos.copy()] for b in balls]
 
         for _ in range(steps):

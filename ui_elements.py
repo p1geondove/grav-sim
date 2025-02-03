@@ -128,6 +128,10 @@ class Ball:
         pygame.draw.aacircle(surface, self.color, (self.radius, self.radius), self.radius, 2)
         return surface
 
+    def copy(self):
+        ball = Ball(self.radius, self.pos, self.vel)
+        return ball
+
 class Button:
     def __init__(self, pos:pygame.Rect, text:str = 'button'):
         self.pos = Vec2(pos)
