@@ -74,8 +74,8 @@ class Playground:
         self.balls: list[ui_elements.Ball] = [ui_elements.Ball() for _ in range(self.amt_balls)]
         self.buttons = [ui_elements.Button((5, 5 + y*30), name) for y, name in enumerate(self.draw_map)]
         self.sliders = [
-            ui_elements.Slider((5, self.surface.height-35, 100, 30), 0.005, 1),
-            ui_elements.Slider((5, self.surface.height-70, 100, 30), 10, 1000)
+            ui_elements.Slider((5, self.surface.height-35, 100, 30), 0.005, 1, 'dt'),
+            ui_elements.Slider((5, self.surface.height-70, 100, 30), 10, 1000, 'len')
         ]
         self.draw()
 
@@ -89,9 +89,7 @@ class Playground:
             self.draw_infos.draw_grid(self)
 
         for ball in self.balls:
-            ball.pos.x = ball.pos.x % self.surface.width
-            ball.pos.y = ball.pos.y % self.surface.height
-            self.surface.blit(ball.draw(), ball.pos-Vec2(ball.radius))
+            self.surface.blit(ball.surface, ball.pos-Vec2(ball.radius))
 
         for button in self.buttons:
             func, active = self.draw_map[button.text]
@@ -172,16 +170,10 @@ class Playground:
 
         for ball in self.balls:
             ball.update(self.dt)
+            ball.pos.x = ball.pos.x % self.surface.width
+            ball.pos.y = ball.pos.y % self.surface.height
 
     def trajectories(self, steps:int) -> list[list[tuple[Vec2, float]]]:
-        # balls:list[ui_elements.Ball] = []
-        # for ball in self.balls:
-        #     balls.append(
-        #         ui_elements.Ball(
-        #             position=ball.pos,
-        #             velocity=ball.vel,
-        #             radius=ball.radius
-        #         ))
         balls = [ball.copy() for ball in self.balls]
         lines:list[list[Vec2]] = [[b.pos.copy()] for b in balls]
 

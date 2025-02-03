@@ -29,7 +29,7 @@ class Colors:
     background = pygame.Color('#292929')
     active = pygame.Color('#4cb355')
     inactive = pygame.Color('#a74f4f')
-    trail = pygame.Color('#967e1e')
+    trail = pygame.Color('#5e94d1')
     vel_vector = pygame.Color('#4e9c60')
     grid = pygame.Color('#5e94d1')
     text = pygame.Color('#afafaf')

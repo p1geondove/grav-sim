@@ -23,13 +23,16 @@ class Ball:
             self.vel = Vec2(random.uniform(-5, 5), random.uniform(-5, 5))
         else: self.vel = Vec2(velocity)
 
-        self.surface = pygame.Surface(Vec2(self.radius*2), SRCALPHA)
-        self.color = pygame.Color.from_hsla(random.uniform(0,360),100,75,100)
         self.acc = Vec2(0)
+        
         self.pressed_left = False
         self.pressed_right = False
         self.pressed_ctrl = False
         self.touching = False
+
+        self.surface = pygame.Surface(Vec2(self.radius*2), SRCALPHA)
+        self.color = pygame.Color.from_hsla(random.uniform(0,360), 100, 75, 100)
+        pygame.draw.aacircle(self.surface, self.color, (self.radius, self.radius), self.radius, 2)
 
     def collide(self, other: Ball):
         impact_vector = other.pos - self.pos
@@ -85,6 +88,7 @@ class Ball:
 
         elif event.type == MOUSEMOTION:
             if self.pressed_left and self.pressed_right:
+                old = self.radius
                 if self.pressed_ctrl:
                     x, y = self.pos - event.pos + Vec2(grid_size/2)
                     x = x - x % grid_size
@@ -92,7 +96,10 @@ class Ball:
                     self.radius = Vec2(x,y).magnitude()
                 else:
                     self.radius += sum(Vec2(event.rel))
+
                 self.radius = min(max(1,self.radius),10000)
+                if old != self.radius:
+                    self.draw()
 
             elif self.pressed_left:
                 if self.pressed_ctrl:
@@ -124,9 +131,8 @@ class Ball:
                 self.pressed_ctrl = False
 
     def draw(self):
-        surface = pygame.Surface(Vec2(self.radius*2), SRCALPHA)
-        pygame.draw.aacircle(surface, self.color, (self.radius, self.radius), self.radius, 2)
-        return surface
+        self.surface = pygame.Surface(Vec2(self.radius*2), SRCALPHA)
+        pygame.draw.aacircle(self.surface, self.color, (self.radius, self.radius), self.radius, 2)
 
     def copy(self):
         ball = Ball(self.radius, self.pos, self.vel)
@@ -164,25 +170,28 @@ class Slider:
     def draw(self):
         pos_x = (self.val - self.start) / (self.end - self.start) * (self.rect.width - self.size_vert*2)
         rect_hori = pygame.Rect(self.size_vert, self.rect.height/2-self.size_hori, self.rect.width-self.size_vert*2, self.size_hori*2)
-        rect_vert = pygame.Rect(pos_x-self.size_vert, 0, self.size_vert*2, self.rect.height)
+        rect_vert = pygame.Rect(pos_x, 0, self.size_vert*2, self.rect.height)
         text = constants.Fonts.small.render(f'{self.name}: {self.val:.2f}', True, constants.Colors.text)
         self.surface = pygame.Surface(self.rect.size + Vec2(text.width,0), SRCALPHA)
-        self.surface.blit(self.surface,(self.rect.width,self.rect.height/2-text.height/2))
+        self.surface.blit(text,(self.rect.width, self.rect.height/2-text.height/2))
         pygame.draw.rect(self.surface, constants.Colors.slider_hori, rect_hori, 0, self.size_hori)
         pygame.draw.rect(self.surface, constants.Colors.slider_vert, rect_vert, 0, int(self.size_vert*0.7))
     
     def handle_event(self, event:pygame.Event):
         if event.type == MOUSEBUTTONDOWN:
             pos_x = (self.val - self.start) / (self.end - self.start) * (self.rect.width - self.size_vert*2)
-            rect = pygame.Rect(pos_x-self.size_vert, 0, 10, self.rect.height).move(self.rect.topleft)
+            rect = pygame.Rect(pos_x, 0, self.size_vert*2, self.rect.height).move(self.rect.topleft)
             pygame.draw.rect(self.surface, 'red', rect, 1)
-            self.pressed = rect.collidepoint(event.pos)
+            if self.rect.collidepoint(event.pos):
+                self.pressed = event.pos[0], self.val
 
         elif event.type == MOUSEBUTTONUP:
             self.pressed = False
         
         elif event.type == MOUSEMOTION and self.pressed:
-            self.val += event.rel[0] * (self.end-self.start) / self.rect.width
+            
+            self.val = (self.end-self.start) / self.rect.width * (event.pos[0]-self.pressed[0]) + self.pressed[1]
+            # self.val += event.rel[0] * (self.end-self.start) / self.rect.width
             self.val = min(max(self.start, self.val), self.end)
             return ['draw']
 
