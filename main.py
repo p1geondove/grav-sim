@@ -38,13 +38,6 @@ class Ball:
         combined_radius = self.radius + other.radius
 
         if distance_squared > combined_radius ** 2: return
-            # self.touching = True
-            # if (distance_squared - combined_radius ** 2) ** 0.5 > 1:
-                # self.touching = False
-
-        # if not self.touching:
-        #     self.touching = True  
-        #     return
 
         distance = impact_vector.magnitude()
         overlap = combined_radius - distance
@@ -75,8 +68,6 @@ class Ball:
         self.vel += self.acc * dt
         self.pos += self.vel * dt
         self.acc = Vec2(0)
-        # self.pos.x = self.pos.x % self.domain.width
-        # self.pos.y = self.pos.y % self.domain.height
 
     def handle_event(self, event):
         if event.type == MOUSEBUTTONDOWN:
@@ -201,6 +192,41 @@ class Slider:
             return ['draw']
 
 class PlayGround:
+    class draw_infos:
+        def draw_traj(self:Ball):
+            for line in self.trajectories(300, self.dt, self.surface.get_rect()):
+                pygame.draw.aalines(self.surface, 'orange', False, line)
+
+        def draw_center(self:Ball):
+            mass = [b.radius**2 for b in self.balls]
+            pos = [b.pos.copy() for b in self.balls]
+            r = reduce(lambda x,y : x+y, (m*p for m,p in zip(mass,pos)))
+            d = reduce(lambda x,y : x+y, mass)
+            pygame.draw.circle(self.surface, 'red', r/d,3)
+
+        def draw_vel(self:Ball):
+            for ball in self.balls:
+                pygame.draw.aaline(self.surface, '#4e9c60', ball.pos, ball.pos + ball.vel*30)
+
+        def draw_grid(self:Ball):
+            if self.mouse_pos is None: return
+            grid_radius = 100
+
+            for y in range(-grid_radius, grid_radius+1, self.grid_size):
+                for x in range(-grid_radius, grid_radius+1, self.grid_size):
+                    distance = Vec2(x,y).magnitude() / grid_radius
+                    if distance > 1: continue
+                    color = pygame.Color('orange').lerp('grey15',distance)
+                    pos_x = x + self.mouse_pos.x - self.mouse_pos.x % self.grid_size + self.grid_size/2
+                    pos_y = y + self.mouse_pos.y - self.mouse_pos.y % self.grid_size + self.grid_size/2
+                    pygame.draw.aacircle(self.surface, color, (pos_x,pos_y), 1)
+
+        functions = [
+            ('trajectory', draw_traj),
+            ('center', draw_center),
+            ('velocity',draw_vel),
+        ]
+
     def __init__(self, window:pygame.Surface):
         pygame.font.init()
         self.window = window
@@ -215,45 +241,12 @@ class PlayGround:
         self.color_active = pygame.Color('#47914f')
         self.color_inactive = pygame.Color('#994946')
 
-        self.draw_map = {
-            'trajectory' : [self.draw_traj, False],
-            'center' : [self.draw_center, False],
-            'velocity' : [self.draw_vel, False],
-        }
-
+        self.draw_map = {n: [f, False] for n,f in self.draw_infos.functions}
         self.balls: list[Ball] = [Ball() for _ in range(self.amt_balls)]
         self.buttons = [Button((5, 5 + y*30), name) for y, name in enumerate(self.draw_map)]
         self.slider = Slider((0,self.surface.height-20,100,20),0.01, 1)
 
         self.draw()
-
-    def draw_traj(self):
-        for line in self.trajectories(300, self.dt, self.surface.get_rect()):
-            pygame.draw.aalines(self.surface, 'orange', False, line)
-
-    def draw_center(self):
-        mass = [b.radius**2 for b in self.balls]
-        pos = [b.pos.copy() for b in self.balls]
-        r = reduce(lambda x,y : x+y, (m*p for m,p in zip(mass,pos)))
-        d = reduce(lambda x,y : x+y, mass)
-        pygame.draw.circle(self.surface, 'red', r/d,3)
-
-    def draw_vel(self):
-        for ball in self.balls:
-            pygame.draw.line(self.surface, '#4e9c60', ball.pos, ball.pos + ball.vel*30)
-
-    def draw_grid(self):
-        if self.mouse_pos is None: return
-        grid_radius = 100
-
-        for y in range(-grid_radius, grid_radius+1, self.grid_size):
-            for x in range(-grid_radius, grid_radius+1, self.grid_size):
-                distance = Vec2(x,y).magnitude() / grid_radius
-                if distance > 1: continue
-                color = pygame.Color('orange').lerp('grey15',distance)
-                pos_x = x + self.mouse_pos.x - self.mouse_pos.x % self.grid_size + self.grid_size/2
-                pos_y = y + self.mouse_pos.y - self.mouse_pos.y % self.grid_size + self.grid_size/2
-                pygame.draw.aacircle(self.surface, color, (pos_x,pos_y), 1)
 
     def draw(self):
         if self.playing:
@@ -262,7 +255,7 @@ class PlayGround:
         self.surface.fill('grey15')
 
         if any((b.pressed_ctrl for b in self.balls)):
-            self.draw_grid()
+            self.draw_infos.draw_grid(self)
 
         for ball in self.balls:
             ball.pos.x = ball.pos.x % self.surface.width
@@ -273,7 +266,7 @@ class PlayGround:
             func, active = self.draw_map[button.text]
 
             if active:
-                func()
+                func(self)
                 button.color = self.color_active
             else:
                 button.color = self.color_inactive
