@@ -38,8 +38,8 @@ class Playground:
             if self.mouse_pos is None: return
             grid_radius = 100
 
-            for y in range(-grid_radius, grid_radius+1, self.grid_size):
-                for x in range(-grid_radius, grid_radius+1, self.grid_size):
+            for y in range(-grid_radius, grid_radius+1, int(self.grid_size)):
+                for x in range(-grid_radius, grid_radius+1, int(self.grid_size)):
                     distance = Vec2(x,y).magnitude() / grid_radius
                     if distance > 1: continue
                     pos_x = x + self.mouse_pos.x - self.mouse_pos.x % self.grid_size
@@ -65,11 +65,12 @@ class Playground:
         self.surface = window.copy()
         self.domain = window.get_rect()
         self.amt_balls = 3
-        self.playing = False
         self.dt = 1
-        self.mouse_pos = None
         self.grid_size = 20
         self.trail_size = 300
+        self.playing = False
+        self.pressed_alt = False
+        self.mouse_pos = None
         self.draw_map = {n: [f, False] for n,f in self.draw_infos.functions}
         self.balls: list[ui_elements.Ball] = [ui_elements.Ball() for _ in range(self.amt_balls)]
         self.buttons = [ui_elements.Button((5, 5 + y*30), name) for y, name in enumerate(self.draw_map)]
@@ -118,6 +119,13 @@ class Playground:
             if event.key == K_SPACE:
                 self.playing = not self.playing
 
+            elif event.key == K_LALT:
+                self.pressed_alt = True
+        
+        elif event.type == KEYUP:
+            if event.key == K_LALT:
+                self.pressed_alt = False
+
         elif event.type == MOUSEBUTTONDOWN:
             if event.button == 2:
                 if self.balls:
@@ -129,6 +137,10 @@ class Playground:
                         self.balls.append(ui_elements.Ball(position=event.pos))
                 else:
                     self.balls.append(ui_elements.Ball(position=event.pos))
+
+        elif event.type == MOUSEWHEEL:
+            if self.pressed_alt:
+                self.grid_size *= 2**event.y
 
         elif event.type == VIDEORESIZE:
             self.domain = pygame.Rect((0,0),event.size)

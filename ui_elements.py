@@ -30,7 +30,7 @@ class Ball:
         self.pressed_ctrl = False
         self.touching = False
 
-        self.surface = pygame.Surface(Vec2(self.radius*2), SRCALPHA)
+        self.surface = pygame.Surface(Vec2(self.radius*2+1), SRCALPHA)
         self.color = pygame.Color.from_hsla(random.uniform(0,360), 100, 75, 100)
         pygame.draw.aacircle(self.surface, self.color, (self.radius, self.radius), self.radius, 2)
 
@@ -90,7 +90,7 @@ class Ball:
             if self.pressed_left and self.pressed_right:
                 old = self.radius
                 if self.pressed_ctrl:
-                    x, y = self.pos - event.pos + Vec2(grid_size/2)
+                    x, y = self.pos - event.pos
                     x = x - x % grid_size
                     y = y - y % grid_size
                     self.radius = Vec2(x,y).magnitude()
@@ -112,7 +112,7 @@ class Ball:
 
             elif self.pressed_right:
                 if self.pressed_ctrl:
-                    x, y = self.pos - event.pos + Vec2(grid_size/2)
+                    x, y = self.pos - event.pos
                     x = x - x % grid_size
                     y = y - y % grid_size
                     self.vel = -Vec2(x,y) / 30
@@ -131,12 +131,11 @@ class Ball:
                 self.pressed_ctrl = False
 
     def draw(self):
-        self.surface = pygame.Surface(Vec2(self.radius*2), SRCALPHA)
+        self.surface = pygame.Surface(Vec2(self.radius*2+1), SRCALPHA)
         pygame.draw.aacircle(self.surface, self.color, (self.radius, self.radius), self.radius, 2)
 
     def copy(self):
-        ball = Ball(self.radius, self.pos, self.vel)
-        return ball
+        return Ball(self.radius, self.pos, self.vel)
 
 class Button:
     def __init__(self, pos:pygame.Rect, text:str = 'button'):
@@ -152,7 +151,7 @@ class Button:
             if event.button == 1 and self.surface.get_rect().move(self.pos).collidepoint(event.pos):
                 calls.append('button_pressed')
         return calls
-
+    
     def draw(self):
         self.surface = self.font.render(self.text, True, self.color)
 
