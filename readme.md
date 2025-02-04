@@ -38,8 +38,6 @@ Add camera object
 
 Draw circles that partly out of screen correctly
 
-Make grid size changeable
-
 Trajectory paths should start at the edge of the screen
 
 Physics update: use runge kutta order 4 integration

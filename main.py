@@ -70,6 +70,7 @@ class Playground:
         self.trail_size = 300
         self.playing = False
         self.pressed_alt = False
+        self.pressed_ctrl = False
         self.mouse_pos = None
         self.draw_map = {n: [f, False] for n,f in self.draw_infos.functions}
         self.balls: list[ui_elements.Ball] = [ui_elements.Ball() for _ in range(self.amt_balls)]
@@ -86,7 +87,7 @@ class Playground:
 
         self.surface.fill('grey15')
 
-        if any((b.pressed_ctrl for b in self.balls)):
+        if any((self.pressed_alt, self.pressed_ctrl)):
             self.draw_infos.draw_grid(self)
 
         for ball in self.balls:
@@ -119,27 +120,30 @@ class Playground:
             if event.key == K_SPACE:
                 self.playing = not self.playing
 
+            elif event.key == K_LCTRL:
+                self.pressed_ctrl = True
+
             elif event.key == K_LALT:
                 self.pressed_alt = True
         
         elif event.type == KEYUP:
+            if event.key == K_LCTRL:
+                self.pressed_ctrl = False
+
             if event.key == K_LALT:
                 self.pressed_alt = False
 
         elif event.type == MOUSEBUTTONDOWN:
             if event.button == 2:
-                if self.balls:
-                    for idx, ball in enumerate(self.balls):
-                        if ball.pos.distance_to(event.pos) < ball.radius:
-                            del self.balls[idx]
-                            break
-                    else:
-                        self.balls.append(ui_elements.Ball(position=event.pos))
+                for idx, ball in enumerate(self.balls):
+                    if ball.pos.distance_to(event.pos) < ball.radius:
+                        del self.balls[idx]
+                        break
                 else:
                     self.balls.append(ui_elements.Ball(position=event.pos))
 
         elif event.type == MOUSEWHEEL:
-            if self.pressed_alt:
+            if self.pressed_ctrl:
                 self.grid_size *= 2**event.y
 
         elif event.type == VIDEORESIZE:

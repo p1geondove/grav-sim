@@ -120,7 +120,7 @@ class Ball:
                     self.vel += Vec2(event.rel) / 30
 
         elif event.type == KEYDOWN:
-            if (self.pressed_left or self.pressed_right) and event.key == K_r:
+            if event.key == K_r and (self.pressed_left or self.pressed_right):
                 self.vel = Vec2(0)
             
             if event.key == K_LCTRL:
