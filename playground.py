@@ -191,6 +191,8 @@ class Playground:
         for button in self.buttons:
             if button.handle_event(event):
                 self.infos_states[button.text] = not self.infos_states[button.text]
+                button.color = constants.Colors.active if self.infos_states[button.text] else constants.Colors.inactive
+                button.draw()
                 calls.append('draw')
 
         if self.sliders[0].handle_event(event):
@@ -222,21 +224,18 @@ class Playground:
 
         elif event.type == MOUSEBUTTONDOWN:
             if event.button == 1:
-                for ball in self.balls:
-                    if ball.pos.distance_to(self.camera.to_world_pos(event.pos)) < ball.radius:
-                        ball.pressed = True
-                        self.dragging = False
-                else:
+                if not any((b.pressed for b in self.balls)):
                     self.dragging = True
 
             elif event.button == 2:
                 for idx, ball in enumerate(self.balls):
-                    if ball.pos.distance_to(event.pos) < ball.radius:
+                    if ball.pressed:
+                    # if ball.pos.distance_to(event.pos) < ball.radius:
                         calls.append('draw')
                         del self.balls[idx]
                         break
                 else:
-                    self.balls.append(ui_elements.Ball(position=event.pos))
+                    self.balls.append(ui_elements.Ball(position=self.camera.to_world_pos(event.pos)))
                     calls.append('draw')
             
             elif event.button == 3:

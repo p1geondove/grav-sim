@@ -19,13 +19,11 @@ class Ball:
         else: self.radius = radius
 
         if position is None:
-            self.pos = Vec2(
-                random.uniform(0, 500),
-                random.uniform(0, 500))
+            self.pos = Vec2(random.uniform(0, 500), random.uniform(0, 500))
         else: self.pos = Vec2(position)
 
         if velocity is None:
-            self.vel = Vec2(random.uniform(-5, 5), random.uniform(-5, 5))
+            self.vel = Vec2(random.uniform(-3, 3), random.uniform(-3, 3))
         else: self.vel = Vec2(velocity)
 
         self.acc = Vec2(0)
@@ -33,7 +31,7 @@ class Ball:
         self.pressed_left = False
         self.pressed_right = False
         self.pressed_ctrl = False
-        self.touching = False
+        self.pressed = False
 
         self.surface = pygame.Surface(Vec2(self.radius*2+1), SRCALPHA)
         self.color = pygame.Color.from_hsla(random.uniform(0,360), 100, 75, 100)
@@ -85,6 +83,7 @@ class Ball:
                     self.pressed_left = True
                 elif event.button == 3:
                     self.pressed_right = True
+                self.pressed = True
 
         elif event.type == MOUSEBUTTONUP:
             if event.button == 1:
@@ -103,7 +102,7 @@ class Ball:
                     y = y - y % grid_size
                     self.radius = Vec2(x,y).magnitude()
                 else:
-                    self.radius += sum(Vec2(event.rel)/camera.zoom_val)
+                    self.radius += sum(Vec2(event.rel)*camera.zoom_val)
 
                 self.radius = min(max(1,self.radius),10000)
                 if old != self.radius:
@@ -127,7 +126,7 @@ class Ball:
                     y = y - y % grid_size
                     self.vel = -Vec2(x,y) / 30
                 else:
-                    self.vel += Vec2(event.rel) / camera.zoom_val
+                    self.vel += Vec2(event.rel) * camera.zoom_val / 30
 
         elif event.type == KEYDOWN:
             if event.key == K_r and (self.pressed_left or self.pressed_right):
