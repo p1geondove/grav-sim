@@ -199,25 +199,3 @@ class Slider:
         slider = Slider(self.rect, self.start, self.end, self.name)
         slider.val = self.val
         return slider
-
-class Camera:
-    def __init__(self, window: pygame.Surface, pos:Vec2=None, zoom:float=None):
-        self.window = window
-        if pos:
-            self.pos = pos
-        else:
-            self.pos = Vec2(0,0)
-        if zoom:
-            self.zoom = zoom
-        else:
-            self.zoom = 1
-        self._rect = window.get_rect().move(self.pos).scale_by(self.zoom,self.zoom)
-
-    @property
-    def rect(self) -> pygame.Rect:
-        return self._rect
-    
-    @rect.setter
-    def setrect(self, val):
-        self._rect = pygame.Rect(val)
-                
