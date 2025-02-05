@@ -6,73 +6,101 @@ from pygame import gfxdraw
 from pygame import Vector2 as Vec2
 
 import sys
-from itertools import combinations, pairwise
+from itertools import combinations ,pairwise
 from functools import reduce
+from util import points_on_grid, trajectories
 
 import constants
 import ui_elements
 
+
+class Draw:
+    def __init__(self, playground:Playground):
+        self.window = playground.window
+        self.surface = playground.window.copy()
+        self.pos = Vec2(0,0)
+        self.zoom = 1
+        self.playground = playground
+
+    def traj(self):
+        if not self.playground.balls: return
+        for line in trajectories(self.playground.balls, self.playground.dt, self.playground.sliders['len'], self.playground.domain):
+            for p1, p2 in pairwise(line):
+                color = constants.Colors.trail.lerp(constants.Colors.background, p2[1])
+                pygame.draw.aaline(self.surface, color, p1[0], p2[0])
+
+    def center(self):
+        if not len(self.playground.balls): return
+        mass = [b.radius**2 for b in self.playground.balls]
+        pos = [b.pos.copy() for b in self.playground.balls]
+        r = reduce(lambda x,y : x+y, (m*p for m,p in zip(mass,pos)))
+        d = reduce(lambda x,y : x+y, mass)
+        pygame.draw.aacircle(self.surface, constants.Colors.center2, r/d, 9, 0, True, False, True, False)
+        pygame.draw.aacircle(self.surface, constants.Colors.center, r/d, 10, 1)
+
+    def vel(self):
+        for ball in self.playground.balls:
+            pygame.draw.aaline(self.surface, constants.Colors.vel_vector, ball.pos, ball.pos + ball.vel*30)
+
+    def grid(self, grid_radius:float = 100):
+        for point in points_on_grid(self.playground.grid_size, grid_radius, self.playground.mouse_pos):
+            lerp_val = (point - self.playground.mouse_pos).magnitude() / grid_radius
+            point = (point + self.pos) / self.zoom
+            color = constants.Colors.grid.lerp(constants.Colors.background, lerp_val)
+            gfxdraw.pixel(self.surface, int(point.x), int(point.y), color)
+
+    def balls(self):
+        rect = pygame.Rect(self.pos, Vec2(self.window.size)/self.zoom)
+        for ball in self.playground.balls:
+            size = Vec2(ball.surface.size) / self.zoom
+            if not 1 < max(size) < min(self.window.size): continue
+            screen_pos = (ball.pos + self.pos) / self.zoom
+            rect = self.window.get_rect().move(-size)
+            rect.size += size*2
+            if not rect.collidepoint(screen_pos): continue
+            surface = pygame.transform.scale(ball.surface, size)
+            self.surface.blit(surface, screen_pos-size/2)
+
+    def debug_txt(self):
+        amt_txt = constants.Fonts.medium.render(f'{len(self.playground.balls)} : amt balls',True,constants.Colors.text)
+        pos = self.surface.width - amt_txt.width, 0
+        self.surface.blit(amt_txt, pos)
+
+    def ui(self):
+        for button in self.playground.buttons:
+            self.surface.blit(button.surface,button.pos)
+
+        for slider in self.playground.sliders:
+            slider.surface
+            self.surface.blit(slider.surface, slider.rect.topleft)
+
+        self.debug_txt()
+
+    functions = {
+        'trajectory':traj,
+        'center':center,
+        'velocity':vel,
+    }
+
+    def draw(self):
+        self.surface.fill('grey15')
+        self.balls()
+
+        for name, actve in self.playground.infos_states.items():
+            if actve: self.functions[name]()
+        
+        if self.playground.mouse_pos:
+            self.grid()
+
+        self.ui()
+        self.window.blit(self.surface, (0,0))
+
 class Playground:
-    class draw_infos:
-        def draw_traj(self:Playground):
-            if not self.balls: return
-            for line in self.trajectories(self.trail_size):
-                for p1, p2 in pairwise(line):
-                    color = constants.Colors.trail.lerp(constants.Colors.background, p2[1])
-                    pygame.draw.aaline(self.surface, color, p1[0], p2[0])
-
-        def draw_center(self:Playground):
-            if not self.amt_balls: return
-            mass = [b.radius**2 for b in self.balls]
-            pos = [b.pos.copy() for b in self.balls]
-            r = reduce(lambda x,y : x+y, (m*p for m,p in zip(mass,pos)))
-            d = reduce(lambda x,y : x+y, mass)
-            pygame.draw.aacircle(self.surface, constants.Colors.center2, r/d, 9, 0, True, False, True, False)
-            pygame.draw.aacircle(self.surface, constants.Colors.center, r/d, 10, 1)
-
-        def draw_vel(self:Playground):
-            for ball in self.balls:
-                pygame.draw.aaline(self.surface, constants.Colors.vel_vector, ball.pos, ball.pos + ball.vel*30)
-
-        def draw_grid(self:Playground):
-            # this fucking algorithm took me way too long for what it is, but its insanely efficient
-            def points_on_grid(grid:int, radius:float, pos:Vec2):
-                grid = int(grid)
-                near = lambda x: int(x - x % grid + grid)
-                left = near(pos.x - radius)
-                right = near(pos.x + radius)
-                for x in range(left, right, grid):
-                    dx = abs(x-pos.x)
-                    height = (radius**2 - dx**2) ** 0.5
-                    bottom = near(pos.y - height)
-                    top = near(pos.y + height)
-                    for y in range(bottom, top, grid):
-                        yield Vec2(x,y)
-            
-            if self.mouse_pos is None: return
-            grid_radius = 100
-
-            for point in points_on_grid(self.grid_size, grid_radius, self.mouse_pos):
-                lerp_val = (point - self.mouse_pos).magnitude() / grid_radius
-                color = constants.Colors.grid.lerp(constants.Colors.background, lerp_val)
-                gfxdraw.pixel(self.surface, int(point.x), int(point.y), color)
-
-        def debug_txt(self:Playground):
-            amt_txt = constants.Fonts.medium.render(f'{len(self.balls)} : amt balls',True,constants.Colors.text)
-            pos = self.surface.width - amt_txt.width, 0
-            self.surface.blit(amt_txt,pos)
-
-        functions = [
-            ('trajectory', draw_traj),
-            ('center', draw_center),
-            ('velocity',draw_vel),
-        ]
-
     def __init__(self, window:pygame.Surface):
         pygame.font.init()
         self.window = window
-        self.surface = window.copy()
         self.domain = window.get_rect()
+
         self.amt_balls = 3
         self.dt = 1
         self.grid_size = 20
@@ -80,47 +108,47 @@ class Playground:
         self.playing = False
         self.pressed_alt = False
         self.pressed_ctrl = False
+        self.pressed_left = False
+        self.pressed_right = False
         self.mouse_pos = None
-        self.draw_map = {n: [f, False] for n,f in self.draw_infos.functions}
+        self.infos_states = {n:False for n in Draw.functions}
         self.balls: list[ui_elements.Ball] = [ui_elements.Ball() for _ in range(self.amt_balls)]
-        self.buttons = [ui_elements.Button((5, 5 + y*30), name) for y, name in enumerate(self.draw_map)]
+        self.buttons = [ui_elements.Button((5, 5 + y*30), name) for y, name in enumerate(Draw.functions)]
         self.sliders = [
-            ui_elements.Slider((5, self.surface.height-35, 100, 30), 0.005, 1, 'dt'),
-            ui_elements.Slider((5, self.surface.height-70, 100, 30), 10, 1000, 'len')
+            ui_elements.Slider((5, self.window.height-35, 100, 30), 0.005, 1, 'dt'),
+            ui_elements.Slider((5, self.window.height-70, 100, 30), 10, 1000, 'len')
         ]
-        self.draw()
+        self.camera = Draw(self)
 
     def draw(self):
-        if self.playing:
-            self.update()
+        self.camera.draw()
 
-        self.surface.fill('grey15')
+        # self.camera.draw(self.balls, self.mouse_pos, self.grid_size)
+        # surface_ui = self.window.copy()
+        # surface_balls = self.window.copy()
+        # surface = self.window.copy()
 
-        if any((self.pressed_alt, self.pressed_ctrl)):
-            self.draw_infos.draw_grid(self)
+        # if self.playing:
+        #     self.update()
+        # surface.fill('grey15')
+        # if any((self.pressed_alt, self.pressed_ctrl)):
+        #     surface_ui.blit(self.draw_infos.draw_grid(self),(0,0))
+        # for button in self.buttons:
+        #     func, active = self.draw_map[button.text]
 
-        for ball in self.balls:
-            self.surface.blit(ball.surface, ball.pos-Vec2(ball.radius))
-
-        for button in self.buttons:
-            func, active = self.draw_map[button.text]
-
-            if active:
-                func(self)
-                button.color = constants.Colors.active
-            else:
-                button.color = constants.Colors.inactive
+        #     if active:
+        #         func(self)
+        #         button.color = constants.Colors.active
+        #     else:
+        #         button.color = constants.Colors.inactive
             
-            button.draw()
-            self.surface.blit(button.surface, button.pos)
+        #     button.draw()
+        #     surface.blit(button.surface, button.pos)
+        # for slider in self.sliders:
+        #     slider.draw()
+        #     surface.blit(slider.surface, slider.rect.topleft)
 
-        for slider in self.sliders:
-            slider.draw()
-            self.surface.blit(slider.surface, slider.rect.topleft)
-
-        self.draw_infos.debug_txt(self)
-
-        self.window.blit(self.surface, (0,0))
+        # self.window.blit(surface, (0,0))
 
     def handle_event(self, event:pygame.Event):
         calls = []
@@ -139,21 +167,38 @@ class Playground:
             if event.key == K_LCTRL:
                 self.pressed_ctrl = False
 
-            if event.key == K_LALT:
+            elif event.key == K_LALT:
                 self.pressed_alt = False
 
         elif event.type == MOUSEBUTTONDOWN:
-            if event.button == 2:
+            if event.button == 1:
+                self.pressed_left = True
+            elif event.button == 2:
                 for idx, ball in enumerate(self.balls):
                     if ball.pos.distance_to(event.pos) < ball.radius:
                         del self.balls[idx]
                         break
                 else:
                     self.balls.append(ui_elements.Ball(position=event.pos))
+            elif event.button == 3:
+                self.pressed_right = True
+
+        elif event.type == MOUSEBUTTONUP:
+            if event.button == 1:
+                self.pressed_right = False
+
+            elif event.button == 3:
+                self.pressed_right = False
 
         elif event.type == MOUSEWHEEL:
             if self.pressed_ctrl:
                 self.grid_size *= 2**event.y
+                
+        elif event.type == MOUSEMOTION:
+            pressed = self.pressed_left or self.pressed_right
+            no_balls = not any([ball.pressed_left or ball.pressed_right for ball in self.balls])
+            if pressed and no_balls:
+                self.camera.move(event.rel)
 
         elif event.type == VIDEORESIZE:
             self.domain = pygame.Rect((0,0),event.size)
@@ -197,46 +242,6 @@ class Playground:
             ball.update(self.dt)
             ball.pos.x = ball.pos.x % self.surface.width
             ball.pos.y = ball.pos.y % self.surface.height
-
-    def trajectories(self, steps:int) -> list[list[tuple[Vec2, float]]]:
-        balls = [ball.copy() for ball in self.balls]
-        lines:list[list[Vec2]] = [[b.pos.copy()] for b in balls]
-
-        for _ in range(steps):
-            for b1, b2 in combinations(balls, 2):
-                b1.collide(b2)
-                b1.force(b2)
-                b2.force(b1)
-
-            for idx, ball in enumerate(balls):
-                ball.update(self.dt)
-                if self.domain:
-                    ball.pos.x = (ball.pos.x - self.domain.left) % self.domain.width + self.domain.left
-                    ball.pos.y = (ball.pos.y - self.domain.top) % self.domain.height + self.domain.top
-
-                lines[idx].append(ball.pos.copy())
-
-        all_segments:list[list[Vec2]] = []
-
-        for line in lines:
-            idx = 0
-            while idx < len(line)-1:
-                if line[idx].distance_to(line[idx+1]) < 100:
-                    break    
-                idx += 1
-
-            segments = [[(line[idx],0)]]  
-            for idx, pos in enumerate(line[1:]):
-                distance = pos.distance_to(segments[-1][-1][0])
-                if 2 < distance < 100:
-                    segments[-1].append((pos, idx/steps))
-                elif distance > 100:
-                    if len(segments[-1]) > 1:
-                        segments.append([(pos,idx/steps)])
-            segments[-1].append((pos,1))
-            all_segments.extend(segments)
-
-        return all_segments
 
 def main():
     # random.seed(0)
