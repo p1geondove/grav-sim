@@ -7,6 +7,11 @@ from pygame import Vector2 as Vec2
 import constants
 import random
 
+DRAG_BALL = USEREVENT + 1
+DRAG_SLIDER = USEREVENT + 2
+PRESS_BALL = USEREVENT + 3
+PRESS_BUTTON = USEREVENT + 4
+
 class Ball:
     def __init__(self, radius:float = None, position:Vec2 = None, velocity:Vec2 = None):
         if radius is None:
@@ -71,13 +76,15 @@ class Ball:
         self.pos += self.vel * dt
         self.acc = Vec2(0)
 
-    def handle_event(self, event, grid_size:int):
+    def handle_event(self, event, grid_size:int, camera):
+        calls = []
+
         if event.type == MOUSEBUTTONDOWN:
-            if Vec2(event.pos - self.pos).magnitude() < self.radius:
+            if Vec2(camera.to_world_pos(event.pos) - self.pos).magnitude() < self.radius:
                 if event.button == 1:
-                    self.pressed_left = Vec2(event.pos)
+                    self.pressed_left = True
                 elif event.button == 3:
-                    self.pressed_right = Vec2(event.pos)
+                    self.pressed_right = True
 
         elif event.type == MOUSEBUTTONUP:
             if event.button == 1:
@@ -88,36 +95,39 @@ class Ball:
 
         elif event.type == MOUSEMOTION:
             if self.pressed_left and self.pressed_right:
+                calls.append('dragged_ball')
                 old = self.radius
                 if self.pressed_ctrl:
-                    x, y = self.pos - event.pos
+                    x, y = self.pos - camera.to_world_pos(event.pos)
                     x = x - x % grid_size
                     y = y - y % grid_size
                     self.radius = Vec2(x,y).magnitude()
                 else:
-                    self.radius += sum(Vec2(event.rel))
+                    self.radius += sum(Vec2(event.rel)/camera.zoom_val)
 
                 self.radius = min(max(1,self.radius),10000)
                 if old != self.radius:
                     self.draw()
-
+                
             elif self.pressed_left:
+                calls.append('dragged_ball')
                 if self.pressed_ctrl:
-                    x, y = event.pos + Vec2(grid_size/2)
+                    x, y = camera.to_world_pos(event.pos) + Vec2(grid_size/2)
                     x = x - x % grid_size
                     y = y - y % grid_size
                     self.pos = Vec2(x,y)
                 else:
-                    self.pos += Vec2(event.rel)
+                    self.pos += Vec2(event.rel) * camera.zoom_val
 
             elif self.pressed_right:
+                calls.append('dragged_ball')
                 if self.pressed_ctrl:
-                    x, y = self.pos - event.pos
+                    x, y = self.pos - camera.to_world_pos(event.pos)
                     x = x - x % grid_size
                     y = y - y % grid_size
                     self.vel = -Vec2(x,y) / 30
                 else:
-                    self.vel += Vec2(event.rel) / 30
+                    self.vel += Vec2(event.rel) / camera.zoom_val
 
         elif event.type == KEYDOWN:
             if event.key == K_r and (self.pressed_left or self.pressed_right):
@@ -129,6 +139,8 @@ class Ball:
         elif event.type == KEYUP:
             if event.key == K_LCTRL:
                 self.pressed_ctrl = False
+
+        return calls
 
     def draw(self):
         self.surface = pygame.Surface(Vec2(self.radius*2+1), SRCALPHA)

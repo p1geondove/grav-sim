@@ -45,13 +45,15 @@ def trajectories(balls:list[Ball], dt:int, steps:int, domain:Rect = None) -> lis
 
 def points_on_grid(grid:int, radius:float, pos:Vec2):
     grid = int(grid)
-    near = lambda x: int(x - x % grid + grid)
-    left = near(pos.x - radius)
-    right = near(pos.x + radius)
+    left = int((pos.x-radius) - (pos.x-radius) % grid + grid)
+    right = int((pos.x+radius) - (pos.x+radius) % grid + grid)
     for x in range(left, right, grid):
         dx = abs(x-pos.x)
         height = (radius**2 - dx**2) ** 0.5
-        bottom = near(pos.y - height)
-        top = near(pos.y + height)
+        bottom = int((pos.y-height) - (pos.y-height) % grid + grid)
+        top = int((pos.y+height) - (pos.y+height) % grid + grid)
         for y in range(bottom, top, grid):
             yield Vec2(x,y)
+
+def nearest(num:float, grid:float):
+    return num - num % grid + grid
