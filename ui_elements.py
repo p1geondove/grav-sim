@@ -7,11 +7,6 @@ from pygame import Vector2 as Vec2
 import constants
 import random
 
-DRAG_BALL = USEREVENT + 1
-DRAG_SLIDER = USEREVENT + 2
-PRESS_BALL = USEREVENT + 3
-PRESS_BUTTON = USEREVENT + 4
-
 class Ball:
     def __init__(self, radius:float = None, position:Vec2 = None, velocity:Vec2 = None):
         if radius is None:
@@ -23,7 +18,7 @@ class Ball:
         else: self.pos = Vec2(position)
 
         if velocity is None:
-            self.vel = Vec2(random.uniform(-3, 3), random.uniform(-3, 3))
+            self.vel = Vec2(random.uniform(-1, 1), random.uniform(-1, 1))
         else: self.vel = Vec2(velocity)
 
         self.acc = Vec2(0)
