@@ -35,18 +35,27 @@ class Playground:
                 pygame.draw.aaline(self.surface, constants.Colors.vel_vector, ball.pos, ball.pos + ball.vel*30)
 
         def draw_grid(self:Playground):
+            # this fucking algorithm took me way too long for what it is, but its insanely efficient
+            def points_on_grid(grid:int, radius:float, pos:Vec2):
+                grid = int(grid)
+                near = lambda x: int(x - x % grid + grid)
+                left = near(pos.x - radius)
+                right = near(pos.x + radius)
+                for x in range(left, right, grid):
+                    dx = abs(x-pos.x)
+                    height = (radius**2 - dx**2) ** 0.5
+                    bottom = near(pos.y - height)
+                    top = near(pos.y + height)
+                    for y in range(bottom, top, grid):
+                        yield Vec2(x,y)
+            
             if self.mouse_pos is None: return
             grid_radius = 100
 
-            for y in range(-grid_radius, grid_radius+1, int(self.grid_size)):
-                for x in range(-grid_radius, grid_radius+1, int(self.grid_size)):
-                    distance = Vec2(x,y).magnitude() / grid_radius
-                    if distance > 1: continue
-                    pos_x = x + self.mouse_pos.x - self.mouse_pos.x % self.grid_size
-                    pos_y = y + self.mouse_pos.y - self.mouse_pos.y % self.grid_size
-                    distance = min(max(0,Vec2(pos_x, pos_y).distance_to(self.mouse_pos) / grid_radius),1)
-                    color = constants.Colors.grid.lerp(constants.Colors.background, distance)
-                    gfxdraw.pixel(self.surface, int(pos_x), int(pos_y), color)
+            for point in points_on_grid(self.grid_size, grid_radius, self.mouse_pos):
+                lerp_val = (point - self.mouse_pos).magnitude() / grid_radius
+                color = constants.Colors.grid.lerp(constants.Colors.background, lerp_val)
+                gfxdraw.pixel(self.surface, int(point.x), int(point.y), color)
 
         def debug_txt(self:Playground):
             amt_txt = constants.Fonts.medium.render(f'{len(self.balls)} : amt balls',True,constants.Colors.text)

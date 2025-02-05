@@ -1,3 +1,5 @@
 .venv/
 output/
-__pycache__
+__pycache__/
+ntimer.py
+test.py
