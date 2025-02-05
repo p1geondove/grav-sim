@@ -40,4 +40,12 @@ I dont have a mac so i dont know what the process there is, but probably very si
 
 Physics update: use runge kutta order 4 integration
 
-Add different shapes
+Add boundary back, rect and circle. Make them be able to wrap or bounce the balls
+
+Right click drag makes a selection box
+
+Keypress for complete reset
+
+Performance issues when scrolling in too far. Maybe add max zoom constraint
+
+Add slider [1 - 10] for amount of update steps per draw cycle
