@@ -42,11 +42,10 @@ class Playground:
                 if slider.name == 'len':
                     amt_steps = int(slider.val)
 
-            for line in trajectories(self.playground.balls, self.playground.dt, amt_steps, self.zoom_val, self.playground.domain,):
-                for p1, p2 in pairwise(map(self.to_screen_pos, line)):
-                    # color = constants.Colors.trail.lerp(constants.Colors.background, p2[1])
-                    # pygame.draw.aaline(self.surface, color, p1[0], p2[0])
-                    pygame.draw.aaline(self.surface, constants.Colors.trail, p1, p2)
+            for positions, distance in trajectories(self.playground.balls, self.playground.dt, amt_steps, self.zoom_val, self.zoom_val*100,self.playground.domain):
+                for (p1, p2), dist in zip(pairwise(map(self.to_screen_pos, positions)), distance):
+                    color = constants.Colors.trail.lerp(constants.Colors.background, dist)
+                    pygame.draw.aaline(self.surface, color, p1, p2)
 
         def center(self):
             if not len(self.playground.balls): return
@@ -76,17 +75,6 @@ class Playground:
         def balls(self):
             for ball in self.playground.balls:
                 pygame.draw.aacircle(self.surface, ball.color, self.to_screen_pos(ball.pos), ball.radius/self.zoom_val, 2)
-
-            # rect = Rect(self.pos, Vec2(self.window.size)/self.zoom_val)
-            # for ball in self.playground.balls:
-            #     size = Vec2(ball.surface.size) / self.zoom_val
-            #     if not 1 < max(size) < min(self.window.size): continue
-            #     screen_pos = (ball.pos + self.pos) / self.zoom_val
-            #     rect = self.window.get_rect().move(-size)
-            #     rect.size += size*2
-            #     if not rect.collidepoint(screen_pos): continue
-            #     surface = pygame.transform.scale(ball.surface, size)
-            #     self.surface.blit(surface, screen_pos-size/2)
 
         def debug_txt(self):
             amt_txt = constants.Fonts.medium.render(f'{len(self.playground.balls)} : amt balls',True,constants.Colors.text)
@@ -185,7 +173,6 @@ class Playground:
 
         for ball in self.balls:
             if calls := ball.handle_event(event, self.grid_size, self.camera):
-                print(calls)
                 if 'dragged_ball' in calls:
                     self.dragging = False
                 calls.extend(calls)

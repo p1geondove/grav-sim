@@ -205,10 +205,7 @@ class Slider:
             self.pressed = False
         
         elif event.type == MOUSEMOTION and self.pressed:
-            # print('asdasd')
-            
             self.val = (self.end-self.start) / self.rect.width * (event.pos[0]-self.pressed[0]) + self.pressed[1]
-            # self.val += event.rel[0] * (self.end-self.start) / self.rect.width
             self.val = min(max(self.start, self.val), self.end)
             self.draw()
             return ['draw']

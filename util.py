@@ -3,7 +3,7 @@ from pygame import Vector2 as Vec2
 from pygame import Rect
 from ui_elements import Ball
 
-def trajectories(balls:list[Ball], dt:int, steps:int, pixel_size:float, domain:Rect = None) -> list[list[tuple[Vec2, float]]]:
+def trajectories(balls:list[Ball], dt:int, steps:int, min_size:float, max_size:float, domain:Rect = None) -> list[list[tuple[Vec2, float]]]:
     balls = [ball.copy() for ball in balls]
     lines:list[list[Vec2]] = [[b.pos.copy()] for b in balls]
 
@@ -21,33 +21,27 @@ def trajectories(balls:list[Ball], dt:int, steps:int, pixel_size:float, domain:R
 
             lines[idx].append(ball.pos.copy())
 
-    all_segments:list[list[Vec2]] = []
-
     for line in lines:
         idx = 0
         while idx < len(line)-1:
             if line[idx].distance_to(line[idx+1]) < 100:
                 break    
             idx += 1
-
-        # segments = [[(line[idx],0)]]
-        segments = [[line[idx]]]
-        for idx, pos in enumerate(line[1:]):
-            # distance = pos.distance_to(segments[-1][-1][0])
-            distance = pos.distance_to(segments[-1][-1])
-            if pixel_size < distance < 100:
-                # segments[-1].append((pos, idx/steps))
-                segments[-1].append(pos)
+        
+        segment = ([line[idx]], [0])
+        for idx, pos in enumerate(line[idx+1:]):
+            distance = pos.distance_to(segment[0][-1])
+            if min_size < distance < max_size:
+                segment[0].append(pos)
+                segment[1].append(idx/steps)
             elif distance > 100:
-                if len(segments[-1]) > 1:
-                    # segments.append([(pos,idx/steps)])
-                    segments.append([pos])
+                if len(segment[0]) > 1:
+                    yield segment
+                    segment = ([line[idx]], [0])
 
-        # segments[-1].append((pos, idx/steps))
-        segments[-1].append(pos)
-        all_segments.extend(segments)
-
-    return all_segments
+        segment[0].append(pos)
+        segment[1].append(idx/steps)
+        yield segment
 
 def points_on_grid(grid:int, radius:float, pos:Vec2):
     grid = int(grid)
