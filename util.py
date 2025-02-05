@@ -4,6 +4,26 @@ from pygame import Rect
 from ui_elements import Ball
 
 def trajectories(balls:list[Ball], dt:int, steps:int, min_size:float, max_size:float, domain:Rect = None):
+    """
+    ## Generate points of future trajectory
+
+    It simulates the balls for n steps and returns the positions.
+    Its optimized for drawing, so it takes in min_size and max_size wich sets the size of whats a viable line
+    It returns a bunch lists wich can be used in `pygame.draw.lines`
+    But be careful it actually returns 2 lists: `list[Vec2]` and `list[float]`
+    The second one being a float from 0 to 1 used for lerping/fading the colors
+
+    Args:
+        balls (list[Ball]): list of Ball objects
+        dt (int): uses constant dt
+        steps (int): amount of steps into the future
+        min_size (float): smallest line distance
+        max_size (float): maximum line distance
+        domain (Rect, optional): Optional domain of type Rect. Defaults to None.
+
+    Yields:
+        tuple[ list[Vec2], list[float] ]: list of x,y points and list of float from 0-1
+    """
     balls = [ball.copy() for ball in balls]
     lines:list[list[Vec2]] = [[b.pos.copy()] for b in balls]
 
@@ -28,7 +48,7 @@ def trajectories(balls:list[Ball], dt:int, steps:int, min_size:float, max_size:f
                 break    
             idx += 1
         
-        segment = ([line[idx]], [0]) # tuple of 2 lists, one for x,y pos and one for distance for lerp
+        segment = ([line[idx]], [0])
         pos = None
         for idx, pos in enumerate(line[idx+1:]):
             distance = pos.distance_to(segment[0][-1])

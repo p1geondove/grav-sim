@@ -8,7 +8,7 @@ from pygame import gfxdraw
 from functools import reduce
 from itertools import combinations, pairwise
 
-import constants
+import const
 import ui_elements
 from util import points_on_grid, trajectories
 
@@ -44,7 +44,7 @@ class Playground:
 
             for positions, distance in trajectories(self.playground.balls, self.playground.dt, amt_steps, self.zoom_val, self.zoom_val*100,self.playground.domain):
                 for (p1, p2), dist in zip(pairwise(map(self.to_screen_pos, positions)), distance):
-                    color = constants.Colors.trail.lerp(constants.Colors.background, dist)
+                    color = const.Colors.trail.lerp(const.Colors.background, dist)
                     pygame.draw.aaline(self.surface, color, p1, p2)
 
         def center(self):
@@ -54,14 +54,14 @@ class Playground:
             r = reduce(lambda x,y : x+y, (m*p for m,p in zip(mass,pos)))
             d = reduce(lambda x,y : x+y, mass)
             center = self.to_screen_pos(r/d)
-            pygame.draw.aacircle(self.surface, constants.Colors.center2, center, 9, 0, True, False, True, False)
-            pygame.draw.aacircle(self.surface, constants.Colors.center, center, 10, 1)
+            pygame.draw.aacircle(self.surface, const.Colors.center2, center, 9, 0, True, False, True, False)
+            pygame.draw.aacircle(self.surface, const.Colors.center, center, 10, 1)
 
         def vel(self):
             for ball in self.playground.balls:
                 start = self.to_screen_pos(ball.pos)
                 end = self.to_screen_pos(ball.pos+ball.vel*30)
-                pygame.draw.aaline(self.surface, constants.Colors.vel_vector, start, end)
+                pygame.draw.aaline(self.surface, const.Colors.vel_vector, start, end)
 
         def grid(self, grid_radius:float = 100):
             grid_radius = grid_radius * self.zoom_val
@@ -69,7 +69,7 @@ class Playground:
             for point in points_on_grid(self.playground.grid_size, grid_radius, mouse_pos):
                 lerp_val = min(max(0,(point - mouse_pos).magnitude() / grid_radius),1)
                 point = self.to_screen_pos(point)
-                color = constants.Colors.grid.lerp(constants.Colors.background, lerp_val)
+                color = const.Colors.grid.lerp(const.Colors.background, lerp_val)
                 gfxdraw.pixel(self.surface, int(point.x), int(point.y), color)
 
         def balls(self):
@@ -77,7 +77,7 @@ class Playground:
                 pygame.draw.aacircle(self.surface, ball.color, self.to_screen_pos(ball.pos), ball.radius/self.zoom_val, 2)
 
         def debug_txt(self):
-            amt_txt = constants.Fonts.medium.render(f'{len(self.playground.balls)} : amt balls',True,constants.Colors.text)
+            amt_txt = const.Fonts.medium.render(f'{len(self.playground.balls)} : amt balls',True,const.Colors.text)
             pos = self.surface.width - amt_txt.width, 0
             self.surface.blit(amt_txt, pos)
 
@@ -141,12 +141,13 @@ class Playground:
 
         self.buttons:list[ui_elements.Button] = []
         for y, (name, state) in enumerate(self.infos_states.items()):
-            color = constants.Colors.active if state else constants.Colors.inactive
+            color = const.Colors.active if state else const.Colors.inactive
             self.buttons.append(ui_elements.Button((5, 5 + y*30), name, color))
 
+        padding = 5
         self.sliders = [
-            ui_elements.Slider((5, self.window.height-35, 100, 30), 0.005, 1, 'dt'),
-            ui_elements.Slider((5, self.window.height-70, 100, 30), 10, 1000, 'len')
+            ui_elements.Slider('dt', 0.005, 1, (padding, self.window.height-const.Sizes.slider.y-padding, const.Sizes.slider.x, const.Sizes.slider.y), ),
+            ui_elements.Slider('len', 10, 1000, (padding, self.window.height-const.Sizes.slider.y*2-padding*2, const.Sizes.slider.x, const.Sizes.slider.y))
         ]
 
         self.camera = self.Camera(self)
@@ -171,7 +172,7 @@ class Playground:
         for button in self.buttons:
             if button.handle_event(event):
                 self.infos_states[button.text] = not self.infos_states[button.text]
-                button.color = constants.Colors.active if self.infos_states[button.text] else constants.Colors.inactive
+                button.color = const.Colors.active if self.infos_states[button.text] else const.Colors.inactive
                 button.draw()
                 calls.append('draw')
 

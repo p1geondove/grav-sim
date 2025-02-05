@@ -4,7 +4,7 @@ import pygame
 from pygame.locals import *
 from pygame import Vector2 as Vec2
 
-import constants
+import const
 import random
 
 class Ball:
@@ -151,7 +151,7 @@ class Button:
             self.color = color
         else:
             self.color = 'white'
-        self.font = constants.Fonts.large
+        self.font = const.Fonts.large
         self.surface = self.font.render(text, True, self.color)
         self.draw()
 
@@ -166,15 +166,15 @@ class Button:
         self.surface = self.font.render(self.text, True, self.color)
 
 class Slider:
-    def __init__(self, rect:pygame.Rect, start:float, end:float, name:str='slider'):
-        self.rect = pygame.Rect(rect)
+    def __init__(self, name:str, start:float, end:float, rect:pygame.Rect):
+        self.name = name
         self.start = start
         self.end = end
+        self.rect = pygame.Rect(rect)
         self.val = (end - start) / 2
-        self.name = name
         self.pressed = False
         self.size_hori = 2
-        self.size_vert = 5
+        self.size_vert = 4
         self.surface = pygame.Surface(self.rect.size)
         self.draw()
 
@@ -182,11 +182,11 @@ class Slider:
         pos_x = (self.val - self.start) / (self.end - self.start) * (self.rect.width - self.size_vert*2)
         rect_hori = pygame.Rect(self.size_vert, self.rect.height/2-self.size_hori, self.rect.width-self.size_vert*2, self.size_hori*2)
         rect_vert = pygame.Rect(pos_x, 0, self.size_vert*2, self.rect.height)
-        text = constants.Fonts.small.render(f'{self.name}: {self.val:.2f}', True, constants.Colors.text)
+        text = const.Fonts.small.render(f'{self.name}: {self.val:.2f}', True, const.Colors.text)
         self.surface = pygame.Surface(self.rect.size + Vec2(text.width,0), SRCALPHA)
         self.surface.blit(text,(self.rect.width, self.rect.height/2-text.height/2))
-        pygame.draw.rect(self.surface, constants.Colors.slider_hori, rect_hori, 0, self.size_hori)
-        pygame.draw.rect(self.surface, constants.Colors.slider_vert, rect_vert, 0, int(self.size_vert*0.7))
+        pygame.draw.rect(self.surface, const.Colors.slider_hori, rect_hori, 0, self.size_hori)
+        pygame.draw.rect(self.surface, const.Colors.slider_vert, rect_vert, 0, int(self.size_vert*0.7))
     
     def handle_event(self, event:pygame.Event):
         if event.type == MOUSEBUTTONDOWN:

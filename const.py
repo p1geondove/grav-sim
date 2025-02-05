@@ -1,6 +1,6 @@
-import pygame
 import os
 import sys
+import pygame
 
 pygame.font.init()
 
@@ -14,6 +14,9 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
+class Sizes:
+    slider = pygame.Vector2(100, 20)
+    
 class Fonts:
     try:
         font_name = resource_path('AgaveNerdFontMono-Regular.ttf')
@@ -31,7 +34,7 @@ class Colors:
     inactive = pygame.Color('#a74f4f')
     trail = pygame.Color('#5e94d1')
     vel_vector = pygame.Color('#4e9c60')
-    grid = pygame.Color('#5e94d1')
+    grid = pygame.Color('#5886bb')
     text = pygame.Color('#afafaf')
 
     slider_hori = pygame.Color('grey50')
