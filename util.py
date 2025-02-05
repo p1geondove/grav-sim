@@ -29,6 +29,7 @@ def trajectories(balls:list[Ball], dt:int, steps:int, min_size:float, max_size:f
             idx += 1
         
         segment = ([line[idx]], [0]) # tuple of 2 lists, one for x,y pos and one for distance for lerp
+        pos = None
         for idx, pos in enumerate(line[idx+1:]):
             distance = pos.distance_to(segment[0][-1])
             if min_size < distance < max_size:
@@ -38,10 +39,10 @@ def trajectories(balls:list[Ball], dt:int, steps:int, min_size:float, max_size:f
                 if len(segment[0]) > 1:
                     yield segment
                     segment = ([line[idx]], [0])
-
-        segment[0].append(pos)
-        segment[1].append(idx/steps)
-        yield segment
+        if pos:
+            segment[0].append(pos)
+            segment[1].append(idx/steps)
+            yield segment
 
 def points_on_grid(grid:float, radius:float, pos:Vec2):
     near = lambda x : x - x % grid + grid
