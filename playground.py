@@ -67,7 +67,7 @@ class Playground:
             grid_radius = grid_radius * self.zoom_val
             mouse_pos = self.to_world_pos(self.playground.mouse_pos)
             for point in points_on_grid(self.playground.grid_size, grid_radius, mouse_pos):
-                lerp_val = (point - mouse_pos).magnitude() / grid_radius
+                lerp_val = min(max(0,(point - mouse_pos).magnitude() / grid_radius),1)
                 point = self.to_screen_pos(point)
                 color = constants.Colors.grid.lerp(constants.Colors.background, lerp_val)
                 gfxdraw.pixel(self.surface, int(point.x), int(point.y), color)
@@ -157,15 +157,15 @@ class Playground:
             self.update()
 
         surface_balls = self.camera.draw()
-        surface_hud = self.window.copy()
+        # surface_hud = self.window.copy()
 
-        for slider in self.sliders:
-            surface_hud.blit(slider.surface, slider.rect.topleft)
+        # for slider in self.sliders:
+        #     surface_hud.blit(slider.surface, slider.rect.topleft)
         
-        for button in self.buttons:
-            surface_hud.blit(button.surface, button.pos)
+        # for button in self.buttons:
+        #     surface_hud.blit(button.surface, button.pos)
         
-        self.window.blit(surface_hud, (0,0))
+        # self.window.blit(surface_hud, (0,0))
         self.window.blit(surface_balls, (0,0))
 
     def handle_event(self, event:Event):

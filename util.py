@@ -28,7 +28,7 @@ def trajectories(balls:list[Ball], dt:int, steps:int, min_size:float, max_size:f
                 break    
             idx += 1
         
-        segment = ([line[idx]], [0])
+        segment = ([line[idx]], [0]) # tuple of 2 lists, one for x,y pos and one for distance for lerp
         for idx, pos in enumerate(line[idx+1:]):
             distance = pos.distance_to(segment[0][-1])
             if min_size < distance < max_size:
@@ -43,17 +43,16 @@ def trajectories(balls:list[Ball], dt:int, steps:int, min_size:float, max_size:f
         segment[1].append(idx/steps)
         yield segment
 
-def points_on_grid(grid:int, radius:float, pos:Vec2):
-    grid = int(grid)
-    left = int((pos.x-radius) - (pos.x-radius) % grid + grid)
-    right = int((pos.x+radius) - (pos.x+radius) % grid + grid)
-    for x in range(left, right, grid):
-        dx = abs(x-pos.x)
+def points_on_grid(grid:float, radius:float, pos:Vec2):
+    near = lambda x : x - x % grid + grid
+    left = near(pos.x - radius)
+    right = near(pos.x + radius)
+    while left < right:
+        dx = abs(left - pos.x)
         height = (radius**2 - dx**2) ** 0.5
-        bottom = int((pos.y-height) - (pos.y-height) % grid + grid)
-        top = int((pos.y+height) - (pos.y+height) % grid + grid)
-        for y in range(bottom, top, grid):
-            yield Vec2(x,y)
-
-def nearest(num:float, grid:float):
-    return num - num % grid + grid
+        bottom = near(pos.y - height)
+        top = near(pos.y + height)
+        while bottom < top:
+            yield Vec2(left,bottom)
+            bottom += grid
+        left += grid
