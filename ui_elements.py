@@ -150,18 +150,22 @@ class Ball:
         return Ball(self.radius, self.pos, self.vel)
 
 class Button:
-    def __init__(self, pos:pygame.Rect, text:str = 'button'):
+    def __init__(self, pos:pygame.Rect, text:str = 'button', color:pygame.Color = None):
         self.pos = Vec2(pos)
         self.text = text
-        self.color = 'white'
+        if color:
+            self.color = color
+        else:
+            self.color = 'white'
         self.font = constants.Fonts.large
         self.surface = self.font.render(text, True, self.color)
+        self.draw()
 
     def handle_event(self, event:pygame.Event):
         calls = []
         if event.type == MOUSEBUTTONDOWN:
             if event.button == 1 and self.surface.get_rect().move(self.pos).collidepoint(event.pos):
-                calls.append('button_pressed')
+                calls.append('pressed_button')
         return calls
     
     def draw(self):
@@ -178,6 +182,7 @@ class Slider:
         self.size_hori = 2
         self.size_vert = 5
         self.surface = pygame.Surface(self.rect.size)
+        self.draw()
 
     def draw(self):
         pos_x = (self.val - self.start) / (self.end - self.start) * (self.rect.width - self.size_vert*2)
@@ -201,10 +206,12 @@ class Slider:
             self.pressed = False
         
         elif event.type == MOUSEMOTION and self.pressed:
+            # print('asdasd')
             
             self.val = (self.end-self.start) / self.rect.width * (event.pos[0]-self.pressed[0]) + self.pressed[1]
             # self.val += event.rel[0] * (self.end-self.start) / self.rect.width
             self.val = min(max(self.start, self.val), self.end)
+            self.draw()
             return ['draw']
 
     def copy(self):

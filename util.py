@@ -3,7 +3,7 @@ from pygame import Vector2 as Vec2
 from pygame import Rect
 from ui_elements import Ball
 
-def trajectories(balls:list[Ball], dt:int, steps:int, domain:Rect = None) -> list[list[tuple[Vec2, float]]]:
+def trajectories(balls:list[Ball], dt:int, steps:int, pixel_size:float, domain:Rect = None) -> list[list[tuple[Vec2, float]]]:
     balls = [ball.copy() for ball in balls]
     lines:list[list[Vec2]] = [[b.pos.copy()] for b in balls]
 
@@ -30,15 +30,21 @@ def trajectories(balls:list[Ball], dt:int, steps:int, domain:Rect = None) -> lis
                 break    
             idx += 1
 
-        segments = [[(line[idx],0)]]  
+        # segments = [[(line[idx],0)]]
+        segments = [[line[idx]]]
         for idx, pos in enumerate(line[1:]):
-            distance = pos.distance_to(segments[-1][-1][0])
-            if 2 < distance < 100:
-                segments[-1].append((pos, idx/steps))
+            # distance = pos.distance_to(segments[-1][-1][0])
+            distance = pos.distance_to(segments[-1][-1])
+            if pixel_size < distance < 100:
+                # segments[-1].append((pos, idx/steps))
+                segments[-1].append(pos)
             elif distance > 100:
                 if len(segments[-1]) > 1:
-                    segments.append([(pos,idx/steps)])
-        segments[-1].append((pos,1))
+                    # segments.append([(pos,idx/steps)])
+                    segments.append([pos])
+
+        # segments[-1].append((pos, idx/steps))
+        segments[-1].append(pos)
         all_segments.extend(segments)
 
     return all_segments
