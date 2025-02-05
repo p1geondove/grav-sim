@@ -66,11 +66,20 @@ class Playground:
         def grid(self, grid_radius:float = 100):
             grid_radius = grid_radius * self.zoom_val
             mouse_pos = self.to_world_pos(self.playground.mouse_pos)
+
             for point in points_on_grid(self.playground.grid_size, grid_radius, mouse_pos):
                 lerp_val = min(max(0,(point - mouse_pos).magnitude() / grid_radius),1)
                 point = self.to_screen_pos(point)
-                color = const.Colors.grid.lerp(const.Colors.background, lerp_val)
-                gfxdraw.pixel(self.surface, int(point.x), int(point.y), color)
+                
+                color_mid = const.Colors.grid.lerp(const.Colors.background, lerp_val)
+                color_arround = pygame.Color(color_mid)
+                color_arround.a = 100
+
+                gfxdraw.pixel(self.surface, int(point.x), int(point.y), color_mid)
+                gfxdraw.pixel(self.surface, int(point.x)-1, int(point.y), color_arround)
+                gfxdraw.pixel(self.surface, int(point.x), int(point.y)-1, color_arround)
+                gfxdraw.pixel(self.surface, int(point.x)+1, int(point.y), color_arround)
+                gfxdraw.pixel(self.surface, int(point.x), int(point.y)+1, color_arround)
 
         def balls(self):
             for ball in self.playground.balls:
