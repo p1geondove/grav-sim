@@ -74,16 +74,19 @@ class Playground:
                 gfxdraw.pixel(self.surface, int(point.x), int(point.y), color)
 
         def balls(self):
-            rect = Rect(self.pos, Vec2(self.window.size)/self.zoom_val)
             for ball in self.playground.balls:
-                size = Vec2(ball.surface.size) / self.zoom_val
-                if not 1 < max(size) < min(self.window.size): continue
-                screen_pos = (ball.pos + self.pos) / self.zoom_val
-                rect = self.window.get_rect().move(-size)
-                rect.size += size*2
-                if not rect.collidepoint(screen_pos): continue
-                surface = pygame.transform.scale(ball.surface, size)
-                self.surface.blit(surface, screen_pos-size/2)
+                pygame.draw.aacircle(self.surface, ball.color, self.to_screen_pos(ball.pos), ball.radius/self.zoom_val, 2)
+
+            # rect = Rect(self.pos, Vec2(self.window.size)/self.zoom_val)
+            # for ball in self.playground.balls:
+            #     size = Vec2(ball.surface.size) / self.zoom_val
+            #     if not 1 < max(size) < min(self.window.size): continue
+            #     screen_pos = (ball.pos + self.pos) / self.zoom_val
+            #     rect = self.window.get_rect().move(-size)
+            #     rect.size += size*2
+            #     if not rect.collidepoint(screen_pos): continue
+            #     surface = pygame.transform.scale(ball.surface, size)
+            #     self.surface.blit(surface, screen_pos-size/2)
 
         def debug_txt(self):
             amt_txt = constants.Fonts.medium.render(f'{len(self.playground.balls)} : amt balls',True,constants.Colors.text)
