@@ -3,7 +3,7 @@ from pygame import Vector2 as Vec2
 from pygame import Rect
 from ui_elements import Ball
 
-def trajectories(balls:list[Ball], dt:int, steps:int, min_size:float, max_size:float, domain:Rect = None) -> list[list[tuple[Vec2, float]]]:
+def trajectories(balls:list[Ball], dt:int, steps:int, min_size:float, max_size:float, domain:Rect = None):
     balls = [ball.copy() for ball in balls]
     lines:list[list[Vec2]] = [[b.pos.copy()] for b in balls]
 
