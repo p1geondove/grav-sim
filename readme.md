@@ -25,7 +25,7 @@ It only supports Circles, at least as of now.
 
 If you are on **Window** the fastest way is to head to the releases page on the right and downloading the lastest **exe**
 
-If you are not on Windows or wanna you wanna use the latest bleeding edge version here are some steps
+If you are not on Windows or you just want to use the latest bleeding edge version here are some steps
 - Dowload the repo `git clone https://github.com/p1geondove/grav-sim`
 - Move into repo `cd grav-sim`
 - create python env `python -m venv .venv`
