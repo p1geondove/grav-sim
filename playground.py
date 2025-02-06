@@ -25,12 +25,13 @@ class Playground:
             self.pos += Vec2(pixel_pos[0] * self.zoom_val, pixel_pos[1] * self.zoom_val)
 
         def zoom(self, zoom_amt):
-            if zoom_amt < 0:
-                self.pos += self.playground.mouse_pos * self.zoom_val
-                self.zoom_val /= 2**zoom_amt
+            if not 2**-10 < self.zoom_val/2**zoom_amt < 2**5: return
             if zoom_amt > 0:
                 self.zoom_val /= 2**zoom_amt
                 self.pos -= self.playground.mouse_pos * self.zoom_val
+            else:
+                self.pos += self.playground.mouse_pos * self.zoom_val
+                self.zoom_val /= 2**zoom_amt
 
         def get_rect(self):
             return Rect(self.pos, Vec2(self.window.size)/self.zoom_val)
@@ -255,7 +256,6 @@ class Playground:
             if self.dragging:
                 self.show_grid = True
                 self.camera.move(event.rel)
-                calls.append('draw')
 
         elif event.type == VIDEORESIZE:
             # self.domain = Rect((0,0),event.size)
