@@ -11,6 +11,7 @@ from itertools import combinations, pairwise
 import const
 import ui_elements
 from util import points_on_grid, trajectories
+from startpos import get_balls
 
 class Playground:
     class Camera:
@@ -170,10 +171,11 @@ class Playground:
         calls = []
 
         for ball in self.balls:
-            if calls := ball.handle_event(event, self.grid_size, self.camera):
-                if 'dragged_ball' in calls:
+            if calls_ball := ball.handle_event(event, self.grid_size, self.camera):
+                if 'dragged_ball' in calls_ball:
                     self.dragging = False
-                calls.extend(calls)
+                calls.extend(calls_ball)
+                print(calls)
         
         for button in self.buttons:
             if button.handle_event(event):
@@ -198,6 +200,11 @@ class Playground:
 
             elif event.key == K_LALT:
                 self.pressed_alt = True
+
+            elif event.key == K_r and not 'pressed_r' in calls:
+                self.balls = get_balls(0)
+                self.camera.pos = Vec2(0,0)
+                self.camera.zoom_val = 1
         
         elif event.type == KEYUP:
             if event.key == K_LCTRL:

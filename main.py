@@ -1,7 +1,7 @@
 import pygame
 import sys
 from playground import Playground
-from startpos import ARRANGEMENTS
+from startpos import get_balls
 from const import steps_per_update
 
 def main():
@@ -9,7 +9,7 @@ def main():
     pygame.font.init()
     window = pygame.display.set_mode((800, 800), pygame.RESIZABLE)
     playground = Playground(window)
-    playground.balls = ARRANGEMENTS[0]
+    playground.balls = get_balls(0)
     clock = pygame.Clock()
 
     while True:

@@ -1,4 +1,5 @@
 from ui_elements import Ball
+
 ARRANGEMENTS: dict[int, list[Ball]] = {
     0 : [
         Ball(20, (340,400), (0,2)),
@@ -7,3 +8,6 @@ ARRANGEMENTS: dict[int, list[Ball]] = {
         Ball(1, (491.5,400), (0,1.5)),
     ]
 }
+
+def get_balls(idx):
+    return [ball.copy() for ball in ARRANGEMENTS[idx]]

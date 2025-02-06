@@ -74,9 +74,16 @@ class Ball:
 
     def handle_event(self, event, grid_size:int, camera):
         calls = []
+        try:
+            pressed = Vec2(camera.to_world_pos(event.pos) - self.pos).magnitude() < self.radius
+        except:
+            try:
+                pressed = Vec2(camera.to_world_pos(camera.playground.mouse_pos) - self.pos).magnitude() < self.radius
+            except:
+                pressed = False
 
         if event.type == MOUSEBUTTONDOWN:
-            if Vec2(camera.to_world_pos(event.pos) - self.pos).magnitude() < self.radius:
+            if pressed:
                 if event.button == 1:
                     self.pressed_left = True
                 elif event.button == 3:
@@ -127,8 +134,9 @@ class Ball:
                     self.vel += Vec2(event.rel) * camera.zoom_val / 30
 
         elif event.type == KEYDOWN:
-            if event.key == K_r and (self.pressed_left or self.pressed_right):
+            if event.key == K_r and pressed:
                 self.vel = Vec2(0)
+                calls.append('pressed_r')
             
             if event.key == K_LCTRL:
                 self.pressed_ctrl = True
