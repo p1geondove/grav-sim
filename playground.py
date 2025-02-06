@@ -216,7 +216,7 @@ class Playground:
 
         elif event.type == MOUSEBUTTONDOWN:
             if event.button == 1:
-                if not any((b.pressed for b in self.balls)):
+                if not any(b.hover for b in self.balls):
                     self.dragging = True
 
             elif event.button == 2:

@@ -26,7 +26,6 @@ class Ball:
         self.pressed_left = False
         self.pressed_right = False
         self.pressed_ctrl = False
-        self.pressed = False
         self.hover = False
 
         self.surface = pygame.Surface(Vec2(self.radius*2+1), SRCALPHA)
