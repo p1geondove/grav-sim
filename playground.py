@@ -178,23 +178,19 @@ class Playground:
                 if 'dragged_ball' in calls:
                     self.dragging = False
                 calls.extend(calls)
-                calls.append('draw')
         
         for button in self.buttons:
             if button.handle_event(event):
                 self.infos_states[button.text] = not self.infos_states[button.text]
                 button.color = const.Colors.active if self.infos_states[button.text] else const.Colors.inactive
                 button.draw()
-                calls.append('draw')
 
         if self.sliders[0].handle_event(event):
             self.dt = self.sliders[0].val
-            calls.append('draw')
             self.dragging = False
         
         if self.sliders[1].handle_event(event):
             self.trail_size = int(self.sliders[1].val)
-            calls.append('draw')
             self.dragging = False
 
         if event.type == KEYDOWN:
@@ -222,13 +218,10 @@ class Playground:
             elif event.button == 2:
                 for idx, ball in enumerate(self.balls):
                     if ball.pressed:
-                    # if ball.pos.distance_to(event.pos) < ball.radius:
-                        calls.append('draw')
                         del self.balls[idx]
                         break
                 else:
                     self.balls.append(ui_elements.Ball(position=self.camera.to_world_pos(event.pos)))
-                    calls.append('draw')
             
             elif event.button == 3:
                 self.pressed_right = True
@@ -258,7 +251,6 @@ class Playground:
                 self.camera.move(event.rel)
 
         elif event.type == VIDEORESIZE:
-            # self.domain = Rect((0,0),event.size)
             self.camera.surface = Surface(event.size)
 
             for idx, slider in enumerate(self.sliders):
@@ -267,12 +259,8 @@ class Playground:
             for ball in self.balls:
                 ball.pos.x = ball.pos.x % self.window.width
                 ball.pos.y = ball.pos.y % self.window.height
-            calls.append('draw')
 
-        self.show_grid = self.pressed_ctrl
-
-        if 'draw' in calls:
-            self.draw()
+        self.show_grid = self.show_grid or self.pressed_ctrl
         
     def update(self):
         for b1, b2 in combinations(self.balls, 2):
