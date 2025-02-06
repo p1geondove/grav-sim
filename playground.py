@@ -156,17 +156,14 @@ class Playground:
 
         padding = 5
         self.sliders = [
-            ui_elements.Slider('dt', 0.005, 1, (padding, self.window.height-const.Sizes.slider.y-padding, const.Sizes.slider.x, const.Sizes.slider.y), ),
-            ui_elements.Slider('len', 10, 1000, (padding, self.window.height-const.Sizes.slider.y*2-padding*2, const.Sizes.slider.x, const.Sizes.slider.y))
+            ui_elements.Slider('dt', 0.005, 1, (padding, self.window.height-const.slider_size.y-padding, const.slider_size.x, const.slider_size.y), ),
+            ui_elements.Slider('len', 10, 1000, (padding, self.window.height-const.slider_size.y*2-padding*2, const.slider_size.x, const.slider_size.y))
         ]
 
         self.camera = self.Camera(self)
         self.draw()
 
     def draw(self):
-        if self.playing:
-            self.update()
-
         self.window.blit(self.camera.draw(), (0,0))
 
     def handle_event(self, event:Event):
@@ -261,17 +258,20 @@ class Playground:
 
         self.show_grid = self.show_grid or self.pressed_ctrl
         
-    def update(self):
-        for b1, b2 in combinations(self.balls, 2):
-            b1.collide(b2)
-            b1.force(b2)
-            b2.force(b1)
-        
-        if self.domain:
-            for ball in self.balls:
-                ball.update(self.dt)
-                ball.pos.x = ball.pos.x % self.window.width
-                ball.pos.y = ball.pos.y % self.window.height
-        else:
-            for ball in self.balls:
-                ball.update(self.dt)
+    def update(self, steps = 1):
+        if not self.playing: return
+        steps = int(max(1,steps))
+        for _ in range(steps):
+            for b1, b2 in combinations(self.balls, 2):
+                b1.collide(b2)
+                b1.force(b2)
+                b2.force(b1)
+            
+            if self.domain:
+                for ball in self.balls:
+                    ball.update(self.dt)
+                    ball.pos.x = ball.pos.x % self.window.width
+                    ball.pos.y = ball.pos.y % self.window.height
+            else:
+                for ball in self.balls:
+                    ball.update(self.dt)

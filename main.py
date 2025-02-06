@@ -2,6 +2,7 @@ import pygame
 import sys
 from playground import Playground
 from startpos import ARRANGEMENTS
+from const import steps_per_update
 
 def main():
     # random.seed(0)
@@ -19,9 +20,10 @@ def main():
             playground.handle_event(event)
         
         # print('\n'+'\n'.join([str(ball) for ball in playground.balls]))
+        playground.update()
         playground.draw()
         pygame.display.flip()
-        clock.tick(150)
+        clock.tick(60)
         print(f'fps: {clock.get_fps():.0f}', end=f'{" "*10}\r')
 
 if __name__ == '__main__':

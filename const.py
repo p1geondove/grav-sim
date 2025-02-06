@@ -14,8 +14,10 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
-class Sizes:
-    slider = pygame.Vector2(100, 20)
+
+slider_size = pygame.Vector2(100, 20)
+
+steps_per_update = 10
     
 class Fonts:
     try:
