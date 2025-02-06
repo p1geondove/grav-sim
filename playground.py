@@ -132,7 +132,7 @@ class Playground:
         self.window = window
         self.domain = window.get_rect()
 
-        self.dt = 1
+        self.dt = 0.2
         self.grid_size = 20
         self.trail_size = 300
 
@@ -157,7 +157,7 @@ class Playground:
 
         padding = 5
         self.sliders = [
-            ui_elements.Slider('dt', 0.005, 1, (padding, self.window.height-const.slider_size.y-padding, const.slider_size.x, const.slider_size.y), ),
+            ui_elements.Slider('dt', 0.001, .3, (padding, self.window.height-const.slider_size.y-padding, const.slider_size.x, const.slider_size.y), ),
             ui_elements.Slider('len', 10, 1000, (padding, self.window.height-const.slider_size.y*2-padding*2, const.slider_size.x, const.slider_size.y))
         ]
 

@@ -19,10 +19,10 @@ def main():
                 sys.exit()
             playground.handle_event(event)
         
-        playground.update(5)
+        playground.update(3)
         playground.draw()
         pygame.display.flip()
-        clock.tick(60)
+        clock.tick(150)
         print(f'fps: {clock.get_fps():.0f}', end=f'{" "*10}\r')
 
 if __name__ == '__main__':
