@@ -64,13 +64,14 @@ class Playground:
                 pygame.draw.aaline(self.surface, const.Colors.vel_vector, start, end)
 
         def grid(self, grid_radius:float = 100):
-            grid_radius = grid_radius * self.zoom_val
+            grid_radius = self.zoom_val * min(self.window.size) * 0.15
+            # grid_radius = grid_radius * self.zoom_val
             mouse_pos = self.to_world_pos(self.playground.mouse_pos)
 
             for point in points_on_grid(self.playground.grid_size, grid_radius, mouse_pos):
                 lerp_val = min(max(0,(point - mouse_pos).magnitude() / grid_radius),1)
                 point = self.to_screen_pos(point)
-                
+
                 color_mid = const.Colors.grid.lerp(const.Colors.background, lerp_val)
                 color_arround = pygame.Color(color_mid)
                 color_arround.a = 100
@@ -86,8 +87,8 @@ class Playground:
                 pygame.draw.aacircle(self.surface, ball.color, self.to_screen_pos(ball.pos), ball.radius/self.zoom_val, 2)
 
         def debug_txt(self):
-            amt_txt = const.Fonts.medium.render(f'{len(self.playground.balls)} : amt balls',True,const.Colors.text)
-            pos = self.surface.width - amt_txt.width, 0
+            amt_txt = const.Fonts.medium.render(str(len(self.playground.balls)),True,const.Colors.text)
+            pos = self.surface.width - amt_txt.width - 5, 5
             self.surface.blit(amt_txt, pos)
 
         def ui(self):
@@ -126,7 +127,7 @@ class Playground:
             'velocity':vel,
         }
 
-    def __init__(self, window:Surface):
+    def __init__(self, window:Surface, ):
         self.window = window
         self.domain = window.get_rect()
 
@@ -245,6 +246,9 @@ class Playground:
             else:
                 self.grid_size /= 2**event.y
                 self.camera.zoom(event.y)
+            
+            self.camera.zoom_val = min(max(1/2**10, self.camera.zoom_val), 2**5)
+            self.grid_size = min(max(2**-5, self.grid_size), 2**10)
                 
         elif event.type == MOUSEMOTION:
             self.mouse_pos = Vec2(event.pos)

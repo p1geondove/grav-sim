@@ -32,6 +32,9 @@ class Ball:
         self.color = pygame.Color.from_hsla(random.uniform(0,360), 100, 75, 100)
         pygame.draw.aacircle(self.surface, self.color, (self.radius, self.radius), self.radius, 2)
 
+    def __repr__(self):
+        return f'Ball r:{self.radius} pos:{self.pos.x:2f}|{self.pos.y:2f} vel:{self.vel.x:2f}|{self.vel.y:2f}'
+
     def collide(self, other: Ball):
         impact_vector = other.pos - self.pos
         distance_squared = impact_vector.magnitude_squared()
