@@ -27,6 +27,7 @@ class Ball:
         self.pressed_right = False
         self.pressed_ctrl = False
         self.pressed = False
+        self.hover = False
 
         self.surface = pygame.Surface(Vec2(self.radius*2+1), SRCALPHA)
         self.color = pygame.Color.from_hsla(random.uniform(0,360), 100, 75, 100)
@@ -74,30 +75,23 @@ class Ball:
 
     def handle_event(self, event, grid_size:int, camera):
         calls = []
-        try:
-            pressed = Vec2(camera.to_world_pos(event.pos) - self.pos).magnitude() < self.radius
-        except:
-            try:
-                pressed = Vec2(camera.to_world_pos(camera.playground.mouse_pos) - self.pos).magnitude() < self.radius
-            except:
-                pressed = False
 
         if event.type == MOUSEBUTTONDOWN:
-            if pressed:
+            if self.hover:
                 if event.button == 1:
                     self.pressed_left = True
                 elif event.button == 3:
                     self.pressed_right = True
-                self.pressed = True
 
         elif event.type == MOUSEBUTTONUP:
             if event.button == 1:
                 self.pressed_left = False
             elif event.button == 3:
-                self.pressed_right = False        
-            self.pressed = False
+                self.pressed_right = False
 
         elif event.type == MOUSEMOTION:
+            self.hover = Vec2(camera.to_world_pos(event.pos) - self.pos).magnitude() < self.radius
+
             if self.pressed_left and self.pressed_right:
                 calls.append('dragged_ball')
                 old = self.radius
@@ -134,7 +128,7 @@ class Ball:
                     self.vel += Vec2(event.rel) * camera.zoom_val / 30
 
         elif event.type == KEYDOWN:
-            if event.key == K_r and pressed:
+            if event.key == K_r and self.hover:
                 self.vel = Vec2(0)
                 calls.append('pressed_r')
             

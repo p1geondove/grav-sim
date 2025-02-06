@@ -2,7 +2,6 @@ import pygame
 import sys
 from playground import Playground
 from startpos import get_balls
-from const import steps_per_update
 
 def main():
     # random.seed(0)

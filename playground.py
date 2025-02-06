@@ -201,7 +201,8 @@ class Playground:
             elif event.key == K_LALT:
                 self.pressed_alt = True
 
-            elif event.key == K_r and not 'pressed_r' in calls:
+            # elif event.key == K_r and not 'pressed_r' in calls:
+            elif event.key == K_r and not any(b.hover for b in self.balls):
                 self.balls = get_balls(0)
                 self.camera.pos = Vec2(0,0)
                 self.camera.zoom_val = 1
