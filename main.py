@@ -19,8 +19,7 @@ def main():
                 sys.exit()
             playground.handle_event(event)
         
-        # print('\n'+'\n'.join([str(ball) for ball in playground.balls]))
-        playground.update()
+        playground.update(5)
         playground.draw()
         pygame.display.flip()
         clock.tick(60)
