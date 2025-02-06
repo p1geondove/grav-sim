@@ -152,7 +152,9 @@ class Ball:
         pygame.draw.aacircle(self.surface, self.color, (self.radius, self.radius), self.radius, 2)
 
     def copy(self):
-        return Ball(self.radius, self.pos, self.vel)
+        b = Ball(self.radius, self.pos, self.vel)
+        b.color = self.color
+        return b
 
 class Button:
     def __init__(self, pos:pygame.Rect, text:str = 'button', color:pygame.Color = None):
