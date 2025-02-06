@@ -64,9 +64,8 @@ class Playground:
                 end = self.to_screen_pos(ball.pos+ball.vel*30)
                 pygame.draw.aaline(self.surface, const.Colors.vel_vector, start, end)
 
-        def grid(self, grid_radius:float = 100):
-            grid_radius = self.zoom_val * min(self.window.size) * 0.15
-            # grid_radius = grid_radius * self.zoom_val
+        def grid(self):
+            grid_radius = self.zoom_val * min(self.window.size) * 0.3
             mouse_pos = self.to_world_pos(self.playground.mouse_pos)
 
             for point in points_on_grid(self.playground.grid_size, grid_radius, mouse_pos):
@@ -241,8 +240,8 @@ class Playground:
                 self.grid_size /= 2**event.y
                 self.camera.zoom(event.y)
             
-            self.camera.zoom_val = min(max(1/2**10, self.camera.zoom_val), 2**5)
             self.grid_size = min(max(2**-5, self.grid_size), 2**10)
+            self.grid_size = min(max(self.camera.zoom_val * 8, self.grid_size), self.camera.zoom_val * 64)
                 
         elif event.type == MOUSEMOTION:
             self.mouse_pos = Vec2(event.pos)
