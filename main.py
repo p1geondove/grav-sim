@@ -1,24 +1,17 @@
 import pygame
-import sys
 from playground import Playground
-from startpos import get_balls
 
 def main():
-    # random.seed(0)
     pygame.font.init()
-    window = pygame.display.set_mode((800, 800), pygame.RESIZABLE)
+    window = pygame.display.set_mode((800, 800), pygame.SRCALPHA or pygame.RESIZABLE)
     playground = Playground(window)
-    playground.balls = get_balls(0)
     clock = pygame.Clock()
 
     while True:
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
             playground.handle_event(event)
         
-        playground.update(3)
+        playground.update(5)
         playground.draw()
         pygame.display.flip()
         clock.tick(150)

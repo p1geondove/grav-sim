@@ -5,13 +5,14 @@ from pygame.locals import *
 from pygame import Surface, Event
 from pygame import gfxdraw
 
+import sys
 from functools import reduce
 from itertools import combinations, pairwise
 
 import const
 import ui_elements
 from util import points_on_grid, trajectories
-from startpos import get_balls
+from startpos import gyat
 
 class Playground:
     class Camera:
@@ -144,11 +145,11 @@ class Playground:
         self.dragging = False
         self.show_grid = False
         self.domain = None
-
+        
         self.mouse_pos = Vec2(0,0)
         self.infos_states = {n:False for n in self.Camera.functions}
 
-        self.balls: list[ui_elements.Ball] = [ui_elements.Ball() for _ in range(3)]
+        self.balls, self.start_balls = gyat()
 
         self.buttons:list[ui_elements.Button] = []
         for y, (name, state) in enumerate(self.infos_states.items()):
@@ -175,7 +176,6 @@ class Playground:
                 if 'dragged_ball' in calls_ball:
                     self.dragging = False
                 calls.extend(calls_ball)
-                print(calls)
         
         for button in self.buttons:
             if button.handle_event(event):
@@ -191,7 +191,11 @@ class Playground:
             self.trail_size = int(self.sliders[1].val)
             self.dragging = False
 
-        if event.type == KEYDOWN:
+        if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+        elif event.type == KEYDOWN:
             if event.key == K_SPACE:
                 self.playing = not self.playing
 
@@ -201,11 +205,11 @@ class Playground:
             elif event.key == K_LALT:
                 self.pressed_alt = True
 
-            # elif event.key == K_r and not 'pressed_r' in calls:
-            elif event.key == K_r and not any(b.hover for b in self.balls):
-                self.balls = get_balls(0)
-                self.camera.pos = Vec2(0,0)
-                self.camera.zoom_val = 1
+            elif event.key == K_r:
+                if self.balls and not any(any((b.hover,b.pressed_left,b.pressed_right)) for b in self.balls):
+                    self.balls = gyat(self.start_balls)[0]
+                    self.camera.pos = Vec2(0,0)
+                    self.camera.zoom_val = 1
         
         elif event.type == KEYUP:
             if event.key == K_LCTRL:
@@ -216,12 +220,12 @@ class Playground:
 
         elif event.type == MOUSEBUTTONDOWN:
             if event.button == 1:
-                if not any(b.hover for b in self.balls):
+                if not any(b.hover for b in self.balls): # careful with empty balls list
                     self.dragging = True
 
             elif event.button == 2:
                 for idx, ball in enumerate(self.balls):
-                    if ball.pressed:
+                    if ball.hover:
                         del self.balls[idx]
                         break
                 else:
