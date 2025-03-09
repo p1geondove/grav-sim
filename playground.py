@@ -1,16 +1,13 @@
 from __future__ import annotations
 import pygame
 from pygame.locals import *
-from pygame import Surface, Event
-
 import sys
-from itertools import pairwise
-
-from const import Fonts, Colors, Var
-import ui_elements
-from physics import PhysicsEngine
-from startpos import get_random
 import numpy as np
+
+from physics import PhysicsEngine
+from const import Fonts, Colors, Var
+from ui_elements import Ball, Button, Slider
+from startpos import get_random
 
 class Playground:
     class Camera:
@@ -42,26 +39,6 @@ class Playground:
             window_size = np.array(self.window.get_size(), dtype=Var.dtype)
             size = window_size / self.zoom_val
             return Rect(self.pos[0], self.pos[1], size[0], size[1])
-
-        def traj(self):
-            if not self.playground.balls: 
-                return
-                
-            amt_steps = 100
-            for slider in self.playground.sliders:
-                if slider.name == 'len':
-                    amt_steps = int(slider.val)
-
-            for positions, distances in self.playground.physics.calculate_trajectories(
-                self.playground.dt, amt_steps,
-                self.playground.solver_method, self.playground.collisions,
-                self.zoom_val, self.zoom_val*100):
-                
-                screen_positions = [self.to_screen_pos(pos) for pos in positions]
-                
-                for (p1, p2), dist in zip(pairwise(screen_positions), distances):
-                    color = Colors.trail.lerp(Colors.background, dist)
-                    pygame.draw.aaline(self.surface, color, (int(p1[0]), int(p1[1])), (int(p2[0]), int(p2[1])))
 
         def center(self):
             if not len(self.playground.balls): 
@@ -172,12 +149,11 @@ class Playground:
             self.surface.blit(amt_txt, (int(pos[0]), int(pos[1])))
 
         functions = {
-            'trajectory':traj,
             'center':center,
             'velocity':vel,
         }
     
-    def __init__(self, window:Surface):
+    def __init__(self, window:pygame.Surface):
         self.window = window
         self.domain = window.get_rect()
 
@@ -204,23 +180,22 @@ class Playground:
         padding = 5
         fontheight = Fonts.large.get_height() + padding
         
-        self.buttons_debug:list[ui_elements.Button] = []
+        self.buttons_debug:list[Button] = []
         for y, (name, state) in enumerate(self.infos_states.items()):
             color = Colors.active if state else Colors.inactive
-            self.buttons_debug.append(ui_elements.Button((padding, padding + y*fontheight), name, color))
-        self.buttons_debug.append(ui_elements.Button((padding,padding+(y+1)*fontheight), 'collision', Colors.inactive))
+            self.buttons_debug.append(Button((padding, padding + y*fontheight), name, color))
+        self.buttons_debug.append(Button((padding,padding+(y+1)*fontheight), 'collision', Colors.inactive))
 
-        self.buttons_solver:list[ui_elements.Button] = []
+        self.buttons_solver:list[Button] = []
         for idx, name in enumerate(['euler','runge_kutta']):
-            button = ui_elements.Button((self.window.width - Fonts.large.size(name)[0] - padding, padding + fontheight * idx), name, Colors.inactive)
+            button = Button((self.window.width - Fonts.large.size(name)[0] - padding, padding + fontheight * idx), name, Colors.inactive)
             self.buttons_solver.append(button)
         self.buttons_solver[0].color = Colors.active
         self.buttons_solver[0].draw()
 
         self.sliders = [
-            ui_elements.Slider('dt', 0, self.dt, (padding, int(self.window.height-Var.slider_size[1]-padding), int(Var.slider_size[0]), int(Var.slider_size[1]))),
-            ui_elements.Slider('len', 5, 300, (padding, int(self.window.height-Var.slider_size[1]*2-padding*2), int(Var.slider_size[0]), int(Var.slider_size[1]))),
-            ui_elements.Slider('fps', 0, 300, (padding, int(self.window.height-Var.slider_size[1]*3-padding*3), int(Var.slider_size[0]), int(Var.slider_size[1]))),
+            Slider('dt', 0, self.dt, (padding, int(self.window.height-Var.slider_size[1]-padding), int(Var.slider_size[0]), int(Var.slider_size[1]))),
+            Slider('fps', 0, 300, (padding, int(self.window.height-Var.slider_size[1]*2-padding*2), int(Var.slider_size[0]), int(Var.slider_size[1]))),
         ]
 
         self.camera = self.Camera(self)
@@ -229,7 +204,7 @@ class Playground:
     def draw(self):
         self.window.blit(self.camera.draw(), (0,0))
 
-    def handle_event(self, event:Event):
+    def handle_event(self, event:pygame.Event):
         calls = []
 
         for idx, ball in enumerate(self.balls):
@@ -261,11 +236,7 @@ class Playground:
             self.dragging = False
         
         if self.sliders[1].handle_event(event):
-            self.trail_size = int(self.sliders[1].val)
-            self.dragging = False
-        
-        if self.sliders[2].handle_event(event):
-            Var.framerate_limit = int(self.sliders[2].val)
+            Var.framerate_limit = int(self.sliders[1].val)
             self.dragging = False
 
         if event.type == pygame.QUIT:
@@ -310,7 +281,7 @@ class Playground:
                         self.physics.remove_ball(idx)
                         break
                 else:
-                    ball = ui_elements.Ball(position=self.camera.to_world_pos(event.pos))
+                    ball = Ball(position=self.camera.to_world_pos(event.pos))
                     self.balls.append(ball)
                     self.physics.add_ball(ball)
             
@@ -342,7 +313,7 @@ class Playground:
                 self.camera.move(event.rel)
 
         elif event.type == VIDEORESIZE:
-            self.camera.surface = Surface(event.size)
+            self.camera.surface = pygame.Surface(event.size)
 
             for idx, slider in enumerate(self.sliders):
                 slider.rect = pygame.Rect((Var.padding, self.window.height-35*(idx+1), 100, 30))
@@ -350,9 +321,9 @@ class Playground:
             for button in self.buttons_solver:
                 button.pos[0] = self.window.width - Fonts.large.size(button.text)[0] - Var.padding
 
-            for ball in self.balls:
-                ball.pos[0] = ball.pos[0] % self.window.width
-                ball.pos[1] = ball.pos[1] % self.window.height
+            # for ball in self.balls:
+            #     ball.pos[0] = ball.pos[0] % self.window.width
+            #     ball.pos[1] = ball.pos[1] % self.window.height
 
         self.show_grid = self.show_grid or self.pressed_ctrl
 

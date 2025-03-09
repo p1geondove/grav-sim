@@ -3,8 +3,6 @@ import numpy as np
 from const import Var
 from ui_elements import Ball
 
-import ntimer
-
 class PhysicsEngine:
     def __init__(self, balls:list[Ball] | PhysicsEngine = None):
         if isinstance(balls, list):
@@ -154,40 +152,3 @@ class PhysicsEngine:
             self.velocities[i] = ball.vel
             self.masses[i] = ball.mass
             self.radii[i] = ball.radius
-
-    def copy(self):
-        return PhysicsEngine(self)
-
-    def calculate_trajectories(self, dt, steps, solver, collision, min_size, max_size):
-        """Calculate trajectories from each ball in the system"""
-        # Kopie der Balls erstellen
-        engine = self.copy()
-        trajectories = [[] for _ in range(len(engine.masses))]
-        
-        # Füge Startpositionen zu den Trajektorien hinzu
-        for i, pos in enumerate(engine.positions):
-            trajectories[i].append(pos.copy())
-
-        for step in range(steps):
-            engine.update_physics(dt,solver,collision,Var.steps_per_draw)
-            for i, pos in enumerate(engine.positions):
-                trajectories[i].append(pos.copy())
-        
-        # Optimiere die Linien für die Visualisierung
-        for obj_idx, line in enumerate(trajectories):
-            line = np.array(line)
-            
-            # Finde Bereiche mit ausreichend Distanz für die Visualisierung
-            distances = np.sqrt(np.sum(np.diff(line, axis=0)**2, axis=1))
-            valid_indices = np.where((distances > min_size) & (distances < max_size))[0]
-            
-            if len(valid_indices) > 0:
-                # Gruppiere zusammenhängende Indizes
-                breaks = np.where(np.diff(valid_indices) > 1)[0]
-                segments = np.split(valid_indices, breaks + 1)
-                
-                for segment in segments:
-                    if len(segment) > 1:
-                        points = line[segment]
-                        fade_values = segment / steps  # Normalisiere für Fading-Effekt
-                        yield points, np.clip(fade_values,0,1)
