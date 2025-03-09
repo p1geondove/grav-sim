@@ -1,68 +1,19 @@
-from itertools import combinations
-from pygame import Vector2 as Vec2
-from pygame import Rect
-from ui_elements import Ball
+from __future__ import annotations
+import os
+import sys
+from mpmath import mp, mpf
 
-def trajectories(balls:list[Ball], dt:int, steps:int, min_size:float, max_size:float, domain:Rect = None):
-    """
-    ## Generate points of future trajectory
+mp.dps = 10
 
-    It simulates the balls for n steps and returns the positions.
-    Its optimized for drawing, so it takes in min_size and max_size wich sets the size of whats a viable line
-    It returns a bunch lists wich can be used in `pygame.draw.lines`
-    But be careful it actually returns 2 lists: `list[Vec2]` and `list[float]`
-    The second one being a float from 0 to 1 used for lerping/fading the colors
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
 
-    Args:
-        balls (list[Ball]): list of Ball objects
-        dt (int): uses constant dt
-        steps (int): amount of steps into the future
-        min_size (float): smallest line distance
-        max_size (float): maximum line distance
-        domain (Rect, optional): Optional domain of type Rect. Defaults to None.
-
-    Yields:
-        tuple[ list[Vec2], list[float] ]: list of x,y points and list of float from 0-1
-    """
-    balls = [ball.copy() for ball in balls]
-    lines:list[list[Vec2]] = [[b.pos.copy()] for b in balls]
-
-    for _ in range(steps):
-        for b1, b2 in combinations(balls, 2):
-            b1.collide(b2)
-            b1.force(b2)
-            b2.force(b1)
-
-        for idx, ball in enumerate(balls):
-            ball.update(dt)
-            if domain:
-                ball.pos.x = (ball.pos.x - domain.left) % domain.width + domain.left
-                ball.pos.y = (ball.pos.y - domain.top) % domain.height + domain.top
-
-            lines[idx].append(ball.pos.copy())
-
-    for line in lines:
-        idx = 0
-        while idx < len(line)-1:
-            if line[idx].distance_to(line[idx+1]) < 100:
-                break    
-            idx += 1
-        
-        segment = ([line[idx]], [0])
-        pos = None
-        for idx, pos in enumerate(line[idx+1:]):
-            distance = pos.distance_to(segment[0][-1])
-            if min_size < distance < max_size:
-                segment[0].append(pos)
-                segment[1].append(idx/steps)
-            elif distance > 100:
-                if len(segment[0]) > 1:
-                    yield segment
-                    segment = ([line[idx]], [0])
-        if pos:
-            segment[0].append(pos)
-            segment[1].append(idx/steps)
-            yield segment
+    return os.path.join(base_path, relative_path)
 
 def points_on_grid(grid:float, radius:float, pos:Vec2):
     near = lambda x : x - x % grid + grid
@@ -77,3 +28,94 @@ def points_on_grid(grid:float, radius:float, pos:Vec2):
             yield Vec2(left,bottom)
             bottom += grid
         left += grid
+
+class Vec2:
+    def __init__(self, x=0.0, y=None):
+        if isinstance(x, tuple):
+            self.x = mpf(x[0])
+            self.y = mpf(x[1])
+        elif isinstance(x, list):
+            self.x = mpf(x[0])
+            self.y = mpf(x[1])
+        elif isinstance(x, Vec2):
+            self.x = mpf(x.x)
+            self.y = mpf(x.y)
+        elif y is None:
+            self.x = mpf(x)
+            self.y = mpf(x)
+        else:
+            self.x = mpf(x)
+            self.y = mpf(y)
+        
+    def __repr__(self):
+        return f'<{self.x,self.y}>'
+    
+    def __add__(self, other:Vec2):
+        if isinstance(other, tuple):
+            return Vec2(self.x + other[0], self.y + other[1])
+        elif isinstance(other, list):
+            return Vec2(self.x + other[0], self.y + other[1])
+        elif isinstance(other, int):
+            return Vec2(self.x + other, self.y + other)
+        elif isinstance(other, float):
+            return Vec2(self.x + other, self.y + other)
+        elif isinstance(other, Vec2):
+            return Vec2(self.x + other.x, self.y + other.y)
+        else:
+            raise NotImplementedError
+    
+    def __radd__(self, other):
+        return self.__add__(other)
+
+    def __sub__(self, other):
+        if isinstance(other, tuple):
+            return Vec2(self.x - other[0], self.y - other[1])
+        elif isinstance(other, list):
+            return Vec2(self.x - other[0], self.y - other[1])
+        elif isinstance(other, int):
+            return Vec2(self.x - other, self.y - other)
+        elif isinstance(other, float):
+            return Vec2(self.x - other, self.y - other)
+        elif isinstance(other, Vec2):
+            return Vec2(self.x - other.x, self.y - other.y)
+        else:
+            raise NotImplementedError
+
+    def __mul__(self, scalar):
+        return Vec2(self.x * scalar, self.y * scalar)
+    
+    def __rmul__(self, scalar):
+        return self.__mul__(scalar)
+    
+    def __truediv__(self, scalar):
+        return Vec2(self.x / scalar, self.y / scalar)
+
+    def __neg__(self):
+        return Vec2(-self.x, -self.y)
+
+    def dot(self, other:Vec2):
+        return self.x * other.x + self.y * other.y
+    
+    def magnitude_squared(self):
+        return self.x * self.x + self.y * self.y
+    
+    def magnitude(self):
+        return self.magnitude_squared() ** 0.5
+    
+    def normalize(self):
+        mag = self.magnitude()
+        if mag > 0:
+            return self / mag
+        return Vec2(0, 0)
+
+    def distance_to(self, other):
+        if isinstance(other, Vec2):
+            dx = other.x - self.x
+            dy = other.y - self.y
+            return (dx**2 + dy**2)**0.5
+
+    def copy(self):
+        return Vec2(self.x, self.y)
+    
+    def tuple(self):
+        return float(self.x), float(self.y)

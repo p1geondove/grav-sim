@@ -1,24 +1,11 @@
-import os
-import sys
 import pygame
+from util import resource_path, Vec2
+
+G = 1
+slider_size = Vec2(100, 20)
+steps_per_update = 10
 
 pygame.font.init()
-
-def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
-    try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
-
-    return os.path.join(base_path, relative_path)
-
-
-slider_size = pygame.Vector2(100, 20)
-
-steps_per_update = 10
-    
 class Fonts:
     try:
         font_name = resource_path('AgaveNerdFontMono-Regular.ttf')

@@ -1,17 +1,17 @@
 from __future__ import annotations
 import pygame
-from pygame import Vector2 as Vec2
 from pygame.locals import *
 from pygame import Surface, Event
 from pygame import gfxdraw
 
 import sys
 from functools import reduce
-from itertools import combinations, pairwise
+from itertools import pairwise
 
 import const
 import ui_elements
-from util import points_on_grid, trajectories
+from physics import trajectories, update_physics
+from util import points_on_grid, Vec2
 from startpos import gyat
 
 class Playground:
@@ -45,10 +45,10 @@ class Playground:
                 if slider.name == 'len':
                     amt_steps = int(slider.val)
 
-            for positions, distance in trajectories(self.playground.balls, self.playground.dt, amt_steps, self.zoom_val, self.zoom_val*100,self.playground.domain):
+            for positions, distance in trajectories(self.playground.balls, self.playground.dt, amt_steps, self.playground.solver_method, self.zoom_val, self.zoom_val*100):
                 for (p1, p2), dist in zip(pairwise(map(self.to_screen_pos, positions)), distance):
                     color = const.Colors.trail.lerp(const.Colors.background, dist)
-                    pygame.draw.aaline(self.surface, color, p1, p2)
+                    pygame.draw.aaline(self.surface, color, p1.tuple(), p2.tuple())
 
         def center(self):
             if not len(self.playground.balls): return
@@ -57,13 +57,13 @@ class Playground:
             r = reduce(lambda x,y : x+y, (m*p for m,p in zip(mass,pos)))
             d = reduce(lambda x,y : x+y, mass)
             center = self.to_screen_pos(r/d)
-            pygame.draw.aacircle(self.surface, const.Colors.center2, center, 9, 0, True, False, True, False)
-            pygame.draw.aacircle(self.surface, const.Colors.center, center, 10, 1)
+            pygame.draw.aacircle(self.surface, const.Colors.center2, center.tuple(), 9, 0, True, False, True, False)
+            pygame.draw.aacircle(self.surface, const.Colors.center, center.tuple(), 10, 1)
 
         def vel(self):
             for ball in self.playground.balls:
-                start = self.to_screen_pos(ball.pos)
-                end = self.to_screen_pos(ball.pos+ball.vel*30)
+                start = self.to_screen_pos(ball.pos).tuple()
+                end = self.to_screen_pos(ball.pos+ball.vel*30).tuple()
                 pygame.draw.aaline(self.surface, const.Colors.vel_vector, start, end)
 
         def grid(self):
@@ -86,16 +86,18 @@ class Playground:
 
         def balls(self):
             for ball in self.playground.balls:
-                pygame.draw.aacircle(self.surface, ball.color, self.to_screen_pos(ball.pos), ball.radius/self.zoom_val, 2)
+                pygame.draw.aacircle(self.surface, ball.color, self.to_screen_pos(ball.pos).tuple(), ball.radius/self.zoom_val, 2)
 
         def debug_txt(self):
             amt_txt = const.Fonts.medium.render(str(len(self.playground.balls)),True,const.Colors.text)
-            pos = self.surface.width - amt_txt.width - 5, 5
-            self.surface.blit(amt_txt, pos)
+            pos = Vec2(self.surface.size) - Vec2(amt_txt.size) - Vec2(5)
+            self.surface.blit(amt_txt, pos.tuple())
 
         def ui(self):
-            for button in self.playground.buttons:
-                self.surface.blit(button.surface,button.pos)
+            for button in self.playground.buttons_debug:
+                self.surface.blit(button.surface,button.pos.tuple())
+            for button in self.playground.buttons_solver:
+                self.surface.blit(button.surface,button.pos.tuple())
 
             for slider in self.playground.sliders:
                 slider.surface
@@ -144,21 +146,33 @@ class Playground:
         self.pressed_right = False
         self.dragging = False
         self.show_grid = False
+        self.collisions = False
         self.domain = None
         
         self.mouse_pos = Vec2(0,0)
         self.infos_states = {n:False for n in self.Camera.functions}
+        self.solver_method = 'euler'
 
         self.balls, self.start_balls = gyat()
 
-        self.buttons:list[ui_elements.Button] = []
+        padding = 5
+        fontheight = const.Fonts.large.get_height() + padding
+        
+        self.buttons_debug:list[ui_elements.Button] = []
         for y, (name, state) in enumerate(self.infos_states.items()):
             color = const.Colors.active if state else const.Colors.inactive
-            self.buttons.append(ui_elements.Button((5, 5 + y*30), name, color))
+            self.buttons_debug.append(ui_elements.Button((padding, padding + y*fontheight), name, color))
+        self.buttons_debug.append(ui_elements.Button((padding,padding+(y+1)*fontheight), 'collision', const.Colors.inactive))
 
-        padding = 5
+        self.buttons_solver:list[ui_elements.Button] = []
+        for idx, name in enumerate(['euler','runge_kutta']):
+            button = ui_elements.Button((self.window.width - const.Fonts.large.size(name)[0] - padding, padding + fontheight * idx), name, const.Colors.inactive)
+            self.buttons_solver.append(button)
+        self.buttons_solver[0].color = const.Colors.active
+        self.buttons_solver[0].draw()
+
         self.sliders = [
-            ui_elements.Slider('dt', 0.001, .3, (padding, self.window.height-const.slider_size.y-padding, const.slider_size.x, const.slider_size.y), ),
+            ui_elements.Slider('dt', 0.001, .01, (padding, self.window.height-const.slider_size.y-padding, const.slider_size.x, const.slider_size.y), ),
             ui_elements.Slider('len', 10, 1000, (padding, self.window.height-const.slider_size.y*2-padding*2, const.slider_size.x, const.slider_size.y))
         ]
 
@@ -177,11 +191,32 @@ class Playground:
                     self.dragging = False
                 calls.extend(calls_ball)
         
-        for button in self.buttons:
+        for button in self.buttons_debug:
             if button.handle_event(event):
-                self.infos_states[button.text] = not self.infos_states[button.text]
-                button.color = const.Colors.active if self.infos_states[button.text] else const.Colors.inactive
+                if button.text in self.infos_states:
+                    self.infos_states[button.text] = not self.infos_states[button.text]
+                    button.color = const.Colors.active if self.infos_states[button.text] else const.Colors.inactive
+                elif button.text == 'collision':
+                    self.collisions = not self.collisions
+                    button.color = const.Colors.active if self.collisions else const.Colors.inactive
                 button.draw()
+        
+        for button in self.buttons_solver:
+            if button.handle_event(event):
+                self.solver_method = button.text
+                for b in self.buttons_solver:
+                    b.color = const.Colors.active if b is button else const.Colors.inactive
+                    b.draw()
+
+        # if self.button_euler.handle_event(event):
+        #     self.solver_method = 'euler'
+        #     self.button_euler.color = const.Colors.active
+        #     self.button_runge.color = const.Colors.inactive
+        # if self.button_runge.handle_event(event):
+        #     self.solver_method = 'rung-kutta'
+        #     self.button_runge.color = const.Colors.active
+        #     self.button_euler.color = const.Colors.inactive
+        #     self.bu
 
         if self.sliders[0].handle_event(event):
             self.dt = self.sliders[0].val
@@ -269,21 +304,11 @@ class Playground:
                 ball.pos.y = ball.pos.y % self.window.height
 
         self.show_grid = self.show_grid or self.pressed_ctrl
-        
+
     def update(self, steps = 1):
+        """Aktualisiert die Simulation mit mehreren Zeitschritten"""
         if not self.playing: return
-        steps = int(max(1,steps))
+        steps = int(max(1, steps))
         for _ in range(steps):
-            for b1, b2 in combinations(self.balls, 2):
-                b1.collide(b2)
-                b1.force(b2)
-                b2.force(b1)
+            update_physics(self.balls, self.dt, self.solver_method, self.collisions)
             
-            if self.domain:
-                for ball in self.balls:
-                    ball.update(self.dt)
-                    ball.pos.x = ball.pos.x % self.window.width
-                    ball.pos.y = ball.pos.y % self.window.height
-            else:
-                for ball in self.balls:
-                    ball.update(self.dt)

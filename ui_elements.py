@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import pygame
 from pygame.locals import *
-from pygame import Vector2 as Vec2
+from math import pi
+from util import Vec2
 
 import const
 import random
@@ -10,7 +11,7 @@ import random
 class Ball:
     def __init__(self, radius:float = None, position:Vec2 = None, velocity:Vec2 = None):
         if radius is None:
-            self.radius = random.uniform(5,50)
+            self.radius = float(random.uniform(5,50))
         else: self.radius = radius
 
         if position is None:
@@ -21,21 +22,33 @@ class Ball:
             self.vel = Vec2(random.uniform(-1, 1), random.uniform(-1, 1))
         else: self.vel = Vec2(velocity)
 
+        self.id = random.randint(1,1000)
+        self.mass = pi*self.radius**2
         self.acc = Vec2(0)
+        self.prev_pos = self.pos.copy()
         
         self.pressed_left = False
         self.pressed_right = False
         self.pressed_ctrl = False
         self.hover = False
-
-        self.surface = pygame.Surface(Vec2(self.radius*2+1), SRCALPHA)
+        self._radius = self.radius
+        self.surface = pygame.Surface(Vec2(self.radius*2+1).tuple(), SRCALPHA)
         self.color = pygame.Color.from_hsla(random.uniform(0,360), 100, 75, 100)
         pygame.draw.aacircle(self.surface, self.color, (self.radius, self.radius), self.radius, 2)
 
     def __repr__(self):
         return f'Ball r:{self.radius} pos:{self.pos.x:2f}|{self.pos.y:2f} vel:{self.vel.x:2f}|{self.vel.y:2f}'
 
-    def collide(self, other: Ball):
+    @property
+    def radius(self) -> float:
+        return self._radius
+    
+    @radius.setter
+    def radius(self, val:float):
+        self._radius = val
+        self.mass = pi*val**2
+
+    def collide(self, other: Ball): # die implementation hält die auseinander, aber paare fangen an sich immer schneller und schneller zu drehen
         impact_vector = other.pos - self.pos
         distance_squared = impact_vector.magnitude_squared()
         combined_radius = self.radius + other.radius
@@ -60,17 +73,6 @@ class Ball:
         v2 = other.vel
         self.vel = v1 - (2 * mass2 / (mass1 + mass2)) * (v1 - v2).dot(impact_vector) * impact_vector * .999
         other.vel = v2 - (2 * mass1 / (mass1 + mass2)) * (v2 - v1).dot(impact_vector) * impact_vector * .999
-
-    def force(self, other: Ball):
-        impact_vector = other.pos - self.pos
-        if impact_vector.x + impact_vector.y == 0: return
-        force = (self.radius**2 * other.radius**2) / self.pos.distance_to(other.pos)**2
-        self.acc += impact_vector.normalize() * force / self.radius**2
-
-    def update(self, dt=1):
-        self.vel += self.acc * dt
-        self.pos += self.vel * dt
-        self.acc = Vec2(0)
 
     def handle_event(self, event, grid_size:int, camera):
         calls = []
@@ -140,10 +142,6 @@ class Ball:
 
         return calls
 
-    def draw(self):
-        self.surface = pygame.Surface(Vec2(self.radius*2+1), SRCALPHA)
-        pygame.draw.aacircle(self.surface, self.color, (self.radius, self.radius), self.radius, 2)
-
     def copy(self):
         b = Ball(self.radius, self.pos, self.vel)
         b.color = self.color
@@ -164,7 +162,7 @@ class Button:
     def handle_event(self, event:pygame.Event):
         calls = []
         if event.type == MOUSEBUTTONDOWN:
-            if event.button == 1 and self.surface.get_rect().move(self.pos).collidepoint(event.pos):
+            if event.button == 1 and self.surface.get_rect().move(self.pos.tuple()).collidepoint(event.pos):
                 calls.append('pressed_button')
         return calls
     
@@ -176,7 +174,7 @@ class Slider:
         self.name = name
         self.start = start
         self.end = end
-        self.rect = pygame.Rect(rect)
+        self.rect = pygame.FRect(rect)
         self.val = (end - start) / 2
         self.pressed = False
         self.size_hori = 2
@@ -188,8 +186,8 @@ class Slider:
         pos_x = (self.val - self.start) / (self.end - self.start) * (self.rect.width - self.size_vert*2)
         rect_hori = pygame.Rect(self.size_vert, self.rect.height/2-self.size_hori, self.rect.width-self.size_vert*2, self.size_hori*2)
         rect_vert = pygame.Rect(pos_x, 0, self.size_vert*2, self.rect.height)
-        text = const.Fonts.small.render(f'{self.name}: {self.val:.2f}', True, const.Colors.text)
-        self.surface = pygame.Surface(self.rect.size + Vec2(text.width,0), SRCALPHA)
+        text = const.Fonts.small.render(f'{self.name}: {self.val:.4f}', True, const.Colors.text)
+        self.surface = pygame.Surface((self.rect.size + Vec2(text.width,0)).tuple(), SRCALPHA)
         self.surface.blit(text,(self.rect.width, self.rect.height/2-text.height/2))
         pygame.draw.rect(self.surface, const.Colors.slider_hori, rect_hori, 0, self.size_hori)
         pygame.draw.rect(self.surface, const.Colors.slider_vert, rect_vert, 0, int(self.size_vert*0.7))
