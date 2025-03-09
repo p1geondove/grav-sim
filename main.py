@@ -1,21 +1,23 @@
 import pygame
 from playground import Playground
-
-def main():
+from const import Var
+  
+def main(): 
     pygame.font.init()
-    window = pygame.display.set_mode((800, 800), pygame.SRCALPHA or pygame.RESIZABLE)
+    window = pygame.display.set_mode(Var.window_size, pygame.SRCALPHA | pygame.RESIZABLE)
+    pygame.display.set_caption("Gravitationssimulation")
     playground = Playground(window)
-    clock = pygame.Clock()
+    clock = pygame.time.Clock()
 
     while True:
         for event in pygame.event.get():
             playground.handle_event(event)
         
-        playground.update(100)
+        playground.update(Var.steps_per_draw)
         playground.draw()
         pygame.display.flip()
-        clock.tick(150)
-        # print(f'fps: {clock.get_fps():.0f}', end=f'{" "*10}\r')
+        clock.tick(Var.framerate_limit)
+        pygame.display.set_caption(f"Gravitationssimulation - FPS: {clock.get_fps():.0f}")
 
 if __name__ == '__main__':
-    main()
+    main() 

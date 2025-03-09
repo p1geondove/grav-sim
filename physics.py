@@ -1,178 +1,193 @@
-from itertools import combinations
-from util import Vec2
+from __future__ import annotations
+import numpy as np
+from const import Var
 from ui_elements import Ball
-from const import G
 
-def trajectories(balls:list[Ball], dt:int, steps:int, solver:str, min_size:float, max_size:float):
-    """
-    ## Generate points of future trajectory
+import ntimer
 
-    It simulates the balls for n steps and returns the positions.
-    Its optimized for drawing, so it takes in min_size and max_size wich sets the size of whats a viable line
-    It returns a bunch lists wich can be used in `pygame.draw.lines`
-    But be careful it actually returns 2 lists: `list[Vec2]` and `list[float]`
-    The second one being a float from 0 to 1 used for lerping/fading the colors
+class PhysicsEngine:
+    def __init__(self, balls:list[Ball] | PhysicsEngine = None):
+        if isinstance(balls, list):
+            if isinstance(balls[0], Ball):
+                self.from_balls(balls)
 
-    Args:
-        balls (list[Ball]): list of Ball objects
-        dt (int): uses constant dt
-        steps (int): amount of steps into the future
-        min_size (float): smallest line distance
-        max_size (float): maximum line distance
-        domain (Rect, optional): Optional domain of type Rect. Defaults to None.
+        elif isinstance(balls, PhysicsEngine):
+            self.positions:np.ndarray = balls.positions.copy()
+            self.velocities:np.ndarray = balls.velocities.copy()
+            self.masses:np.ndarray = balls.masses.copy()
+            self.radii:np.ndarray = balls.radii.copy()
 
-    Yields:
-        tuple[ list[Vec2], list[float] ]: list of x,y points and list of float from 0-1
-    """
-    balls = [ball.copy() for ball in balls]
-    lines:list[list[Vec2]] = [[b.pos.copy()] for b in balls]
-
-    # get all the positions
-    for _ in range(steps):
-        update_physics(balls, dt, solver)
-        for idx, ball in enumerate(balls):
-            lines[idx].append(ball.pos.copy())
-
-    # remove unessecary points
-    for line in lines:
-        idx = 0
-        while idx < len(line)-1:
-            if line[idx].distance_to(line[idx+1]) < 100:
-                break    
-            idx += 1
+        else:
+            self.positions:np.ndarray = np.zeros((1,2),dtype=Var.dtype)
+            self.velocities:np.ndarray = np.zeros((1,2),dtype=Var.dtype)
+            self.masses:np.ndarray = np.zeros((1,),dtype=Var.dtype)
+            self.radii:np.ndarray = np.zeros((1,),dtype=Var.dtype)
         
-        segment = ([line[idx]], [0])
-        pos = None
-        for idx, pos in enumerate(line[idx+1:]):
-            distance = pos.distance_to(segment[0][-1])
-            if min_size < distance < max_size:
-                segment[0].append(pos)
-                segment[1].append(idx/steps)
-            elif distance > 100:
-                if len(segment[0]) > 1:
-                    yield segment
-                    segment = ([line[idx]], [0])
-        if pos:
-            segment[0].append(pos)
-            segment[1].append(idx/steps)
-            yield segment
+        self.collision_enabled = False
+        self.history = [self.positions.copy()]
+        self.trajectory = []
 
-def runge_kutta_step(ball1:Ball, ball2:Ball, dt:float):
-    """Fourth-order Runge-Kutta integration for gravitational interaction between two bodies"""
-    # Save original values
-    orig_pos1 = ball1.pos.copy()
-    orig_vel1 = ball1.vel.copy()
-    orig_pos2 = ball2.pos.copy()
-    orig_vel2 = ball2.vel.copy()
+    def add_ball(self, ball:Ball):
+        """Add ball to engine"""
+        addv = lambda args : np.reshape(np.append(args[0],args[1]),(len(args[0])+1,2))
+        self.positions = addv((self.positions, ball.pos))
+        self.velocities = addv((self.velocities, ball.vel))
+        self.masses = np.append(self.masses, ball.mass)
+        self.radii = np.append(self.radii, ball.radius)
     
-    # Function to calculate acceleration based on positions
-    def calculate_acceleration(pos1:Vec2, pos2:Vec2, mass1:float, mass2:float):
-        # Vector FROM pos1 TO pos2
-        r_vec = pos2 - pos1
-        distance_squared = r_vec.magnitude_squared()
-        
-        # Minimum distance to avoid numerical instability
-        min_distance_squared = 1.0
-        if distance_squared < min_distance_squared:
-            distance_squared = min_distance_squared
-        
-        distance = distance_squared**0.5
-        # Normalize direction vector
-        force_dir = r_vec / distance if distance > 0 else Vec2(1, 0)
-        
-        # Force magnitude follows Newton's law of gravitation
-        force_magnitude = G * (mass1 * mass2) / distance_squared
-        
-        # Acceleration vectors point toward each other
-        acc1 = force_dir * (force_magnitude / mass1)
-        acc2 = -force_dir * (force_magnitude / mass2)
-        
-        return acc1, acc2
-    
-    # k1 calculation
-    k1_acc1, k1_acc2 = calculate_acceleration(orig_pos1, orig_pos2, ball1.mass, ball2.mass)
-    k1_vel1 = orig_vel1.copy()
-    k1_vel2 = orig_vel2.copy()
-    
-    # k2 calculation
-    temp_pos1 = orig_pos1 + k1_vel1 * (dt * 0.5)
-    temp_pos2 = orig_pos2 + k1_vel2 * (dt * 0.5)
-    temp_vel1 = orig_vel1 + k1_acc1 * (dt * 0.5)
-    temp_vel2 = orig_vel2 + k1_acc2 * (dt * 0.5)
-    
-    k2_acc1, k2_acc2 = calculate_acceleration(temp_pos1, temp_pos2, ball1.mass, ball2.mass)
-    k2_vel1 = temp_vel1.copy()
-    k2_vel2 = temp_vel2.copy()
-    
-    # k3 calculation
-    temp_pos1 = orig_pos1 + k2_vel1 * (dt * 0.5)
-    temp_pos2 = orig_pos2 + k2_vel2 * (dt * 0.5)
-    temp_vel1 = orig_vel1 + k2_acc1 * (dt * 0.5)
-    temp_vel2 = orig_vel2 + k2_acc2 * (dt * 0.5)
-    
-    k3_acc1, k3_acc2 = calculate_acceleration(temp_pos1, temp_pos2, ball1.mass, ball2.mass)
-    k3_vel1 = temp_vel1.copy()
-    k3_vel2 = temp_vel2.copy()
-    
-    # k4 calculation
-    temp_pos1 = orig_pos1 + k3_vel1 * dt
-    temp_pos2 = orig_pos2 + k3_vel2 * dt
-    temp_vel1 = orig_vel1 + k3_acc1 * dt
-    temp_vel2 = orig_vel2 + k3_acc2 * dt
-    
-    k4_acc1, k4_acc2 = calculate_acceleration(temp_pos1, temp_pos2, ball1.mass, ball2.mass)
-    k4_vel1 = temp_vel1.copy()
-    k4_vel2 = temp_vel2.copy()
-    
-    # Final position and velocity calculation
-    ball1.pos = orig_pos1 + dt/6.0 * (k1_vel1 + 2*k2_vel1 + 2*k3_vel1 + k4_vel1)
-    ball1.vel = orig_vel1 + dt/6.0 * (k1_acc1 + 2*k2_acc1 + 2*k3_acc1 + k4_acc1)
-    
-    ball2.pos = orig_pos2 + dt/6.0 * (k1_vel2 + 2*k2_vel2 + 2*k3_vel2 + k4_vel2)
-    ball2.vel = orig_vel2 + dt/6.0 * (k1_acc2 + 2*k2_acc2 + 2*k3_acc2 + k4_acc2)
+    def remove_ball(self, index):
+        """Remove ball from engine"""
+        delete = lambda args : np.reshape(np.delete(args[0],(args[1]*2,args[1]*2+1)),(len(args[0])-1,2))
+        self.positions = delete((self.positions, index))
+        self.velocities = delete((self.velocities, index))
+        self.masses = np.delete(self.masses, index)
+        self.radii = np.delete(self.radii, index)
 
-def euler_step(ball1:Ball, ball2:Ball, dt:float):
-    # print('euler')
-    """Einfacher Euler-Schritt für Vergleichszwecke"""
-    # Vektor zwischen den Körpern
-    r_vec = ball2.pos - ball1.pos
-    distance_squared = r_vec.magnitude_squared()
-    
-    # Minimale Entfernung, um Division durch Null zu vermeiden
-    min_distance_squared = 1.0
-    if distance_squared < min_distance_squared:
-        distance_squared = min_distance_squared
-    
-    # Kraftberechnung
-    distance = distance_squared**0.5
-    if distance > 0:
-        force_dir = r_vec / distance
-    else:
-        force_dir = Vec2(1, 0)
-    
-    force_magnitude = G * (ball1.mass * ball2.mass) / distance_squared
-    
-    # Beschleunigungen berechnen
-    acc1 = force_dir * force_magnitude / ball1.mass
-    acc2 = -force_dir * force_magnitude / ball2.mass
-    
-    # Positionen und Geschwindigkeiten aktualisieren
-    ball1.vel += acc1 * dt
-    ball2.vel += acc2 * dt
-    ball1.pos += ball1.vel * dt
-    ball2.pos += ball2.vel * dt
+    def compute_accelerations(self):
+        """Calculates accelerations used for Runge-Kutta"""
+        diff = self.positions[:, np.newaxis, :] - self.positions[np.newaxis, :, :]
+        distances_sq = np.sum(diff**2, axis=2)
+        np.fill_diagonal(distances_sq, 1.0)
+        inv_distances_cubed = (1/np.sqrt(distances_sq))**3
+        np.fill_diagonal(inv_distances_cubed, 0.0)
+        masses_matrix = self.masses[:, np.newaxis] * self.masses[np.newaxis, :]
+        forces = -Var.G * masses_matrix[..., np.newaxis] * diff * inv_distances_cubed[..., np.newaxis]
+        accelerations = np.sum(forces, axis=1) / self.masses[:, np.newaxis]
+        return accelerations
 
-def update_physics(balls:list[Ball], dt:float, method='euler', collision=False):
-    """Aktualisiert alle Bälle mit der gewählten Integrationsmethode"""
-    for ball in balls:
-        ball.prev_pos = ball.pos.copy()
+    def euler_step(self, dt):
+        """Euler step with collision check"""
+        accelerations = self.compute_accelerations()
+        self.velocities += accelerations * dt
+        self.positions += self.velocities * dt
+        if self.collision_enabled:
+            self.handle_collisions()
+    
+    def runge_kutta_step(self, dt):
+        """Runge-Kutta step with collisions check"""
+        orig_pos = self.positions.copy()
+        orig_vel = self.velocities.copy()
+        
+        k1_acc = self.compute_accelerations()
+        k1_vel = self.velocities.copy()
+        
+        self.positions = orig_pos + k1_vel * (dt * 0.5)
+        self.velocities = orig_vel + k1_acc * (dt * 0.5)
+        k2_acc = self.compute_accelerations()
+        k2_vel = self.velocities.copy()
+        
+        self.positions = orig_pos + k2_vel * (dt * 0.5)
+        self.velocities = orig_vel + k2_acc * (dt * 0.5)
+        k3_acc = self.compute_accelerations()
+        k3_vel = self.velocities.copy()
+        
+        self.positions = orig_pos + k3_vel * dt
+        self.velocities = orig_vel + k3_acc * dt
+        k4_acc = self.compute_accelerations()
+        k4_vel = self.velocities.copy()
+        
+        self.positions = orig_pos + (dt/6.0) * (k1_vel + 2*k2_vel + 2*k3_vel + k4_vel)
+        self.velocities = orig_vel + (dt/6.0) * (k1_acc + 2*k2_acc + 2*k3_acc + k4_acc)
+        
+        if self.collision_enabled:
+            self.handle_collisions()
 
-    for ball1, ball2 in combinations(balls, 2):
+    def handle_collisions(self):
+        """Handles collisions between balls as perfect elastic collision"""
+        diff = self.positions[:, np.newaxis, :] - self.positions[np.newaxis, :, :]
+        distances:np.ndarray = np.linalg.norm(diff, axis=-1)
+        combined_radii = self.radii[:, np.newaxis] + self.radii[np.newaxis, :]
+        
+        for i, j in np.argwhere(np.triu(distances < combined_radii,1)):
+            direction = diff[i, j] / distances[i, j]
+            overlap = combined_radii[i, j] - distances[i, j]
+            ratio_i = self.masses[j] / (self.masses[i] + self.masses[j])
+            ratio_j = self.masses[i] / (self.masses[i] + self.masses[j])
+            self.positions[i] += (direction * overlap * ratio_i)
+            self.positions[j] -= (direction * overlap * ratio_j)
+            rel_vel = self.velocities[j] - self.velocities[i]
+            v_proj = np.dot(rel_vel, direction)
+            
+            if 0 < v_proj:
+                impulse = 2 * v_proj / (self.masses[i] + self.masses[j])
+                self.velocities[i] += direction * (impulse * self.masses[j]) * Var.dampening
+                self.velocities[j] += -direction * (impulse * self.masses[i]) * Var.dampening
+   
+    def update_physics(self, dt, method='runge_kutta', collision=False, steps=1):
+        """Update physics"""
+        if self.positions.shape == 0: return
+        self.collision_enabled = collision
         if method == 'runge_kutta':
-            runge_kutta_step(ball1, ball2, dt)
-        elif method == 'euler':
-            euler_step(ball1, ball2, dt)
+            for _ in range(steps):
+                self.runge_kutta_step(dt)
+        else:
+            for _ in range(steps):
+                self.euler_step(dt)
+
+    def update_balls(self, balls):
+        """Update existing balls position and velicoty"""
+        for i, ball in enumerate(balls):
+            ball.pos = self.positions[i]
+            ball.vel = self.velocities[i]
     
-    if collision:
-        for ball1, ball2 in combinations(balls, 2):
-            ball1.collide(ball2) # to be continued
+    def to_balls(self) -> list[Ball]:
+        """Convert Physics-Engine to list of Balls"""
+        balls = []
+        for index in range(len(self.masses) ):
+            balls.append(Ball(
+                self.radii[index],
+                self.positions[index],
+                self.velocities[index],
+            ))
+        return balls
+
+    def from_balls(self, balls:list[Ball]):
+        """Apply position/velocity/etc from list of balls"""
+        n = len(balls)
+        self.positions = np.zeros((n, 2), dtype=np.float64)
+        self.velocities = np.zeros((n, 2), dtype=np.float64)
+        self.masses = np.zeros(n, dtype=np.float64)
+        self.radii = np.zeros(n, dtype=np.float64)
+
+        for i, ball in enumerate(balls):
+            self.positions[i] = ball.pos
+            self.velocities[i] = ball.vel
+            self.masses[i] = ball.mass
+            self.radii[i] = ball.radius
+
+    def copy(self):
+        return PhysicsEngine(self)
+
+    def calculate_trajectories(self, dt, steps, solver, collision, min_size, max_size):
+        """Calculate trajectories from each ball in the system"""
+        # Kopie der Balls erstellen
+        engine = self.copy()
+        trajectories = [[] for _ in range(len(engine.masses))]
+        
+        # Füge Startpositionen zu den Trajektorien hinzu
+        for i, pos in enumerate(engine.positions):
+            trajectories[i].append(pos.copy())
+
+        for step in range(steps):
+            engine.update_physics(dt,solver,collision,Var.steps_per_draw)
+            for i, pos in enumerate(engine.positions):
+                trajectories[i].append(pos.copy())
+        
+        # Optimiere die Linien für die Visualisierung
+        for obj_idx, line in enumerate(trajectories):
+            line = np.array(line)
+            
+            # Finde Bereiche mit ausreichend Distanz für die Visualisierung
+            distances = np.sqrt(np.sum(np.diff(line, axis=0)**2, axis=1))
+            valid_indices = np.where((distances > min_size) & (distances < max_size))[0]
+            
+            if len(valid_indices) > 0:
+                # Gruppiere zusammenhängende Indizes
+                breaks = np.where(np.diff(valid_indices) > 1)[0]
+                segments = np.split(valid_indices, breaks + 1)
+                
+                for segment in segments:
+                    if len(segment) > 1:
+                        points = line[segment]
+                        fade_values = segment / steps  # Normalisiere für Fading-Effekt
+                        yield points, np.clip(fade_values,0,1)

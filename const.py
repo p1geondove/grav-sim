@@ -1,9 +1,6 @@
 import pygame
-from util import resource_path, Vec2
-
-G = 1
-slider_size = Vec2(100, 20)
-steps_per_update = 10
+from util import resource_path
+import numpy as np
 
 pygame.font.init()
 class Fonts:
@@ -31,3 +28,15 @@ class Colors:
 
     center = pygame.Color('#7d2d8f')
     center2 = pygame.Color('#4e2158')
+
+class Var:
+    window_size = 800, 800 # standard window size in pixel
+    slider_size = (100, 20) # x and y size of the sliders in pixel
+    button_font = Fonts.large # font for the buttons
+    framerate_limit = 150 # fps limit, because i feel like its a good idea idk...
+    steps_per_draw = 20 # amt of physics steps. helps boost performance
+    dtype = float # precision control hopefully
+    G = 1 # universal gravitational standard
+    cicrcle_lightness = 75 # l value from hsLa used for making circle a nice pastel color
+    dampening = 0.999 # used in elastic collision only
+    padding = 5 # 5 pixel padding for ui elements (except ball ofc)
