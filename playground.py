@@ -321,10 +321,6 @@ class Playground:
             for button in self.buttons_solver:
                 button.pos[0] = self.window.width - Fonts.large.size(button.text)[0] - Var.padding
 
-            # for ball in self.balls:
-            #     ball.pos[0] = ball.pos[0] % self.window.width
-            #     ball.pos[1] = ball.pos[1] % self.window.height
-
         self.show_grid = self.show_grid or self.pressed_ctrl
 
     def update(self, steps=1):
