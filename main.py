@@ -5,7 +5,6 @@ from const import Var
 def main(): 
     pygame.font.init()
     window = pygame.display.set_mode(Var.window_size, pygame.SRCALPHA | pygame.RESIZABLE)
-    pygame.display.set_caption("Gravitationssimulation")
     playground = Playground(window)
     clock = pygame.time.Clock()
 
@@ -17,7 +16,7 @@ def main():
         playground.draw()
         pygame.display.flip()
         clock.tick(Var.framerate_limit)
-        pygame.display.set_caption(f"Gravitationssimulation - FPS: {clock.get_fps():.0f}")
+        pygame.display.set_caption(f'FPS: {clock.get_fps():.0f}')
 
 if __name__ == '__main__':
     main() 

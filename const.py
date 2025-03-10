@@ -38,5 +38,5 @@ class Var:
     dtype = float # precision control hopefully
     G = 1 # universal gravitational standard
     cicrcle_lightness = 75 # l value from hsLa used for making circle a nice pastel color
-    dampening = 0.999 # used in elastic collision only
+    dampening = 0.99 # used in elastic collision only
     padding = 5 # 5 pixel padding for ui elements (except ball ofc)

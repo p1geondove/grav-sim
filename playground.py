@@ -271,8 +271,13 @@ class Playground:
 
         elif event.type == MOUSEBUTTONDOWN:
             if event.button == 1:
-                if not any(b.hover for b in self.balls): # careful with empty balls list
+                hover = any((
+                    any(b.hover for b in self.balls),
+                    any(b.hover for b in self.buttons_debug),
+                ))
+                if not hover: # careful with empty balls list
                     self.dragging = True
+                
 
             elif event.button == 2:
                 for idx, ball in enumerate(self.balls):

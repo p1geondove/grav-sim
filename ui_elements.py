@@ -157,15 +157,19 @@ class Button:
             self.color = 'white'
         self.font = Fonts.large
         self.surface = self.font.render(text, True, self.color)
+        self.hover = False
         self.draw()
 
     def handle_event(self, event):
         calls = []
-        if event.type == MOUSEBUTTONDOWN:
-            if event.button == 1:
-                rect = self.surface.get_rect().move(int(self.pos[0]), int(self.pos[1]))
-                if rect.collidepoint(event.pos):
+        rect = self.surface.get_rect().move(int(self.pos[0]), int(self.pos[1]))
+        if event.type == MOUSEMOTION:
+            self.hover = rect.collidepoint(event.pos)
+
+        elif event.type == MOUSEBUTTONDOWN:
+            if event.button == 1 and self.hover:
                     calls.append('pressed_button')
+
         return calls
     
     def draw(self):
