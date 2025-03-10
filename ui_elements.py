@@ -274,35 +274,15 @@ class EnergyGraph:
         self.surface = pygame.Surface(self.size, pygame.SRCALPHA)
     
     def draw(self):
-        # Komplett neue transparente Oberfläche erstellen
         self.surface = pygame.Surface(self.size, pygame.SRCALPHA)
-        
-        # Kein Hintergrund, kein Rahmen, wir lassen es vollständig transparent
-        
-        # Graphen zeichnen
+
         if len(self.potential_data) > 1:
-            # Daten innerhalb des Graphenbereichs
             points_count = min(len(self.potential_data), self.max_points)
-            
-            # Graphenbereich mit Padding
-            # padding = 5
             graph_area = pygame.Rect((0,0),self.size)
-            #     padding, 
-            #     padding, 
-            #     self.size[0] - 2*padding, 
-            #     self.size[1] - 2*padding
-            # )
-            
-            # X-Abstand berechnen
             x_spacing = graph_area.width / (points_count - 1) if points_count > 1 else 0
-            
-            # Mittelpunkt für die Nulllinie
             mid_point = graph_area.top + graph_area.height * 0.5
-            
-            # Skalierungsfaktor für die Y-Achse (etwas weniger als die Hälfte der Höhe)
-            scale_factor = graph_area.height * 0.45  # 45% der Höhe, damit nichts abgeschnitten wird
-            
-            # Punkte für jede Energielinie generieren
+            scale_factor = graph_area.height * 0.45
+
             potential_points = []
             kinetic_points = []
             total_points = []
@@ -310,42 +290,32 @@ class EnergyGraph:
             
             for i in range(points_count):
                 x = graph_area.left + i * x_spacing
-                
-                # Nulllinie
                 zero_line_points.append((x, mid_point))
                 
                 if self.max_energy > 0:
-                    # Potentielle Energie
                     pot_y = mid_point - (self.potential_data[-points_count + i] / self.max_energy) * scale_factor
                     potential_points.append((x, pot_y))
                     
-                    # Kinetische Energie
                     kin_y = mid_point - (self.kinetic_data[-points_count + i] / self.max_energy) * scale_factor
                     kinetic_points.append((x, kin_y))
                     
-                    # Gesamtenergie
                     tot_y = mid_point - (self.total_data[-points_count + i] / self.max_energy) * scale_factor
                     total_points.append((x, tot_y))
             
-            # Bereiche füllen mit Polygonen
             if len(potential_points) > 1:
-                # Bereich zwischen Nulllinie und potentieller Energie
                 pot_polygon = potential_points + list(reversed(total_points))
                 pygame.draw.polygon(self.surface, Colors.area_potential, pot_polygon)
                 
-                # Bereich zwischen kinetischer Energie und Gesamtenergie
                 total_kin_polygon = total_points + list(reversed(zero_line_points))
                 pygame.draw.polygon(self.surface, Colors.area_total, total_kin_polygon)
                 
-                # Bereich zwischen potentieller Energie und kinetischer Energie
                 kin_pot_polygon = zero_line_points + list(reversed(kinetic_points))
                 pygame.draw.polygon(self.surface, Colors.area_kinetik, kin_pot_polygon)
                 
                 # Linien zeichnen
                 # Nulllinie (dezent)
                 pygame.draw.aalines(self.surface, pygame.Color(180, 180, 180, 100), False, zero_line_points, 1)
-                
-                # Energielinien
+
                 pygame.draw.aalines(self.surface, Colors.potential_energy, False, potential_points, 2)
                 pygame.draw.aalines(self.surface, Colors.kinetic_energy, False, kinetic_points, 2)
                 pygame.draw.aalines(self.surface, Colors.total_energy, False, total_points, 2)

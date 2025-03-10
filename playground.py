@@ -208,6 +208,7 @@ class Playground:
         calls = []
 
         for idx, ball in enumerate(self.balls):
+            if any(s.hover for s in self.sliders): break
             if calls_ball := ball.handle_event(event, self.grid_size, self.camera):
                 if 'dragged_ball' in calls_ball:
                     self.physics.from_balls(self.balls)
