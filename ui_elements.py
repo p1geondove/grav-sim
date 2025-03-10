@@ -183,6 +183,7 @@ class Slider:
         self.rect = pygame.Rect(rect)
         self.val = (end - start) / 2
         self.pressed = False
+        self.hover = False
         self.size_hori = 2
         self.size_vert = 4
         self.surface = pygame.Surface(self.rect.size)
@@ -211,11 +212,13 @@ class Slider:
         elif event.type == MOUSEBUTTONUP:
             self.pressed = False
         
-        elif event.type == MOUSEMOTION and self.pressed:
-            self.val = (self.end-self.start) / self.rect.width * (event.pos[0]-self.pressed[0]) + self.pressed[1]
-            self.val = min(max(self.start, self.val), self.end)
-            self.draw()
-            return ['draw']
+        elif event.type == MOUSEMOTION:
+            self.hover = self.rect.collidepoint(event.pos)
+            if self.pressed:
+                self.val = (self.end-self.start) / self.rect.width * (event.pos[0]-self.pressed[0]) + self.pressed[1]
+                self.val = min(max(self.start, self.val), self.end)
+                self.draw()
+                return ['draw']
 
     def copy(self):
         slider = Slider(self.name, self.start, self.end, self.rect)

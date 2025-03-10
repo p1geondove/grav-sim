@@ -274,6 +274,8 @@ class Playground:
                 hover = any((
                     any(b.hover for b in self.balls),
                     any(b.hover for b in self.buttons_debug),
+                    any(b.hover for b in self.buttons_solver),
+                    any(s.hover for s in self.sliders)
                 ))
                 if not hover: # careful with empty balls list
                     self.dragging = True
