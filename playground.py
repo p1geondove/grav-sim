@@ -6,7 +6,7 @@ import numpy as np
 
 from physics import PhysicsEngine
 from const import Fonts, Colors, Var
-from ui_elements import Ball, Button, Slider
+from ui_elements import Ball, Button, Slider, EnergyGraph
 from startpos import get_random
 
 class Playground:
@@ -115,16 +115,13 @@ class Playground:
 
             if self.playground.dragging or self.playground.pressed_ctrl:
                 self.grid()
+
             try:
                 self.balls()
+                for name, actve in self.playground.infos_states.items():
+                    if actve: self.functions[name](self)
             except OverflowError:
                 self.playground.reset()
-
-            for name, actve in self.playground.infos_states.items():
-                try:
-                    if actve: self.functions[name](self)
-                except OverflowError:
-                    self.playground.reset()
 
             self.ui()
 
@@ -133,11 +130,14 @@ class Playground:
         def ui(self):
             for button in self.playground.buttons_debug:
                 self.surface.blit(button.surface, button.pos)
+
             for button in self.playground.buttons_solver:
                 self.surface.blit(button.surface, button.pos)
 
             for slider in self.playground.sliders:
                 self.surface.blit(slider.surface, slider.rect.topleft)
+            
+            self.surface.blit(self.playground.energy_graph.draw(), self.playground.energy_graph.position)
 
             self.debug_txt()
 
@@ -145,7 +145,7 @@ class Playground:
             amt_txt = Fonts.medium.render(str(len(self.playground.balls)), True, Colors.text)
             size = np.array(self.surface.get_size(), dtype=Var.dtype)
             text_size = np.array(amt_txt.get_size(), dtype=Var.dtype)
-            pos = size - text_size - Var.padding
+            pos = size - text_size - Var.pad
             self.surface.blit(amt_txt, (int(pos[0]), int(pos[1])))
 
         functions = {
@@ -176,26 +176,26 @@ class Playground:
 
         self.balls, self.start_balls = get_random()
         self.physics = PhysicsEngine(self.balls)
+        self.energy_graph = EnergyGraph((Var.window_size-Var.energy_graph_size, Var.energy_graph_size))
 
-        padding = 5
-        fontheight = Fonts.large.get_height() + padding
+        fontheight = Fonts.large.get_height() + Var.pad
         
         self.buttons_debug:list[Button] = []
         for y, (name, state) in enumerate(self.infos_states.items()):
             color = Colors.active if state else Colors.inactive
-            self.buttons_debug.append(Button((padding, padding + y*fontheight), name, color))
-        self.buttons_debug.append(Button((padding,padding+(y+1)*fontheight), 'collision', Colors.inactive))
+            self.buttons_debug.append(Button((Var.pad, Var.pad + y*fontheight), name, color))
+        self.buttons_debug.append(Button((Var.pad,Var.pad+(y+1)*fontheight), 'collision', Colors.inactive))
 
         self.buttons_solver:list[Button] = []
         for idx, name in enumerate(['euler','runge_kutta']):
-            button = Button((self.window.width - Fonts.large.size(name)[0] - padding, padding + fontheight * idx), name, Colors.inactive)
+            button = Button((self.window.width - Fonts.large.size(name)[0] - Var.pad, Var.pad + fontheight * idx), name, Colors.inactive)
             self.buttons_solver.append(button)
         self.buttons_solver[0].color = Colors.active
         self.buttons_solver[0].draw()
 
         self.sliders = [
-            Slider('dt', 0, self.dt, (padding, int(self.window.height-Var.slider_size[1]-padding), int(Var.slider_size[0]), int(Var.slider_size[1]))),
-            Slider('fps', 0, 300, (padding, int(self.window.height-Var.slider_size[1]*2-padding*2), int(Var.slider_size[0]), int(Var.slider_size[1]))),
+            Slider('dt', 0, self.dt, (Var.pad, int(self.window.height-Var.slider_size[1]-Var.pad), int(Var.slider_size[0]), int(Var.slider_size[1]))),
+            Slider('fps', 0, 300, (Var.pad, int(self.window.height-Var.slider_size[1]*2-Var.pad*2), int(Var.slider_size[0]), int(Var.slider_size[1]))),
         ]
 
         self.camera = self.Camera(self)
@@ -323,10 +323,15 @@ class Playground:
             self.camera.surface = pygame.Surface(event.size)
 
             for idx, slider in enumerate(self.sliders):
-                slider.rect = pygame.Rect((Var.padding, self.window.height-35*(idx+1), 100, 30))
+                slider.rect = pygame.Rect((Var.pad, self.window.height-35*(idx+1), 100, 30))
     
             for button in self.buttons_solver:
-                button.pos[0] = self.window.width - Fonts.large.size(button.text)[0] - Var.padding
+                button.pos[0] = self.window.width - Fonts.large.size(button.text)[0] - Var.pad
+
+            self.energy_graph.resize((
+                self.window.size - Var.energy_graph_size,
+                Var.energy_graph_size
+            ))
 
         self.show_grid = self.show_grid or self.pressed_ctrl
 
@@ -337,6 +342,11 @@ class Playground:
         steps = int(max(1, steps))
         self.physics.update_physics(self.dt, self.solver_method, self.collisions, steps)
         self.physics.update_balls(self.balls)
+
+        self.energy_graph.update(
+            self.physics.potential(),
+            self.physics.kinetic()
+        )
 
     def reset(self):
         self.balls = get_random(self.start_balls)[0]

@@ -3,6 +3,8 @@ import numpy as np
 from const import Var
 from ui_elements import Ball
 
+import ntimer
+
 class PhysicsEngine:
     def __init__(self, balls:list[Ball] | PhysicsEngine = None):
         if isinstance(balls, list):
@@ -27,9 +29,8 @@ class PhysicsEngine:
 
     def add_ball(self, ball:Ball):
         """Add ball to engine"""
-        addv = lambda args : np.reshape(np.append(args[0],args[1]),(len(args[0])+1,2))
-        self.positions = addv((self.positions, ball.pos))
-        self.velocities = addv((self.velocities, ball.vel))
+        self.positions = np.vstack((self.positions, ball.pos))
+        self.velocities = np.vstack((self.velocities, ball.vel))
         self.masses = np.append(self.masses, ball.mass)
         self.radii = np.append(self.radii, ball.radius)
     
@@ -122,7 +123,7 @@ class PhysicsEngine:
             for _ in range(steps):
                 self.euler_step(dt)
 
-    def update_balls(self, balls):
+    def update_balls(self, balls:list[Ball]):
         """Update existing balls position and velicoty"""
         for i, ball in enumerate(balls):
             ball.pos = self.positions[i]
@@ -152,3 +153,19 @@ class PhysicsEngine:
             self.velocities[i] = ball.vel
             self.masses[i] = ball.mass
             self.radii[i] = ball.radius
+
+    def kinetic(self):
+        vel = np.sum(self.velocities**2, axis=1)
+        kin = 0.5 * self.masses * vel
+        return np.sum(kin)
+    
+    def potential(self):
+        masses_matrix = self.masses[:, np.newaxis] * self.masses[np.newaxis, :]
+        diff = self.positions[:, np.newaxis, :] - self.positions[np.newaxis, :, :]
+        distances_sq = np.sum(diff**2, axis=2)
+        np.fill_diagonal(distances_sq, np.inf)
+        inv_distances = 1.0 / np.sqrt(distances_sq)
+        # print(distances_sq)
+        pair_energies = -Var.G * masses_matrix * inv_distances
+        return np.sum(pair_energies) / 2.0
+    
