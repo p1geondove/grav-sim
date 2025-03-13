@@ -6,7 +6,14 @@ from ui_elements import Ball
 import ntimer
 
 class PhysicsEngine:
-    def __init__(self, balls:list[Ball] | PhysicsEngine = None):
+    def __init__(self, dt:float, method=None, collisions:bool=False, buffer:int=100, balls:list[Ball] | PhysicsEngine = None):
+        self.buffer = buffer
+        self.dt = dt
+        self.collision_enabled = collisions
+
+        if method is None:
+            self.method = self.euler_step
+
         if isinstance(balls, list):
             if isinstance(balls[0], Ball):
                 self.from_balls(balls)
@@ -23,17 +30,20 @@ class PhysicsEngine:
             self.masses:np.ndarray = np.zeros((1,),dtype=Var.dtype)
             self.radii:np.ndarray = np.zeros((1,),dtype=Var.dtype)
         
-        self.collision_enabled = False
-        self.history = [self.positions.copy()]
-        self.trajectory = []
+        self.history_pos = self.positions[np.newaxis, :]
+        self.history_vel = self.velocities[np.newaxis, :]
+        self.update_physics()
+
+    def __repr__(self):
+        return f'<Phys amt:{len(self.positions)} buf:{len(self.history_pos)}>'
 
     def add_ball(self, ball:Ball):
         """Add ball to engine"""
-        self.positions = np.vstack((self.positions, ball.pos))
-        self.velocities = np.vstack((self.velocities, ball.vel))
+        self.positions = np.concatenate((self.history_pos[-1], [ball.pos]))
+        self.velocities = np.concatenate((self.history_pos[-1], [ball.vel]))
         self.masses = np.append(self.masses, ball.mass)
         self.radii = np.append(self.radii, ball.radius)
-    
+
     def remove_ball(self, index):
         """Remove ball from engine"""
         delete = lambda args : np.reshape(np.delete(args[0],(args[1]*2,args[1]*2+1)),(len(args[0])-1,2))
@@ -112,34 +122,34 @@ class PhysicsEngine:
                 self.velocities[i] += direction * (impulse * self.masses[j]) * Var.dampening
                 self.velocities[j] += -direction * (impulse * self.masses[i]) * Var.dampening
    
-    def update_physics(self, dt, method='runge_kutta', collision=False, steps=1):
+    def update_physics(self, steps=Var.steps_per_draw, dt:float=None, method:function=None, collision:bool=None):
         """Update physics"""
-        if self.positions.shape == 0: return
-        self.collision_enabled = collision
-        if method == 'runge_kutta':
-            for _ in range(steps):
-                self.runge_kutta_step(dt)
+        if dt:
+            self.dt = float(dt)
+        if method:
+            self.method = method
+        if collision:
+            self.collision_enabled = bool(collision)
+
+        for _ in range(steps):
+            self.method(self.dt)
+
+        self.history_pos = np.concatenate((self.history_pos, [self.positions]))
+        self.history_vel = np.concatenate((self.history_vel, [self.velocities]))
+
+        if len(self.history_pos) < self.buffer//2:
+            self.update_physics(steps, dt, method, collision)
         else:
-            for _ in range(steps):
-                self.euler_step(dt)
+            self.history_pos = self.history_pos[-self.buffer:]
+            self.history_vel = self.history_vel[-self.buffer:]
 
     def update_balls(self, balls:list[Ball]):
         """Update existing balls position and velicoty"""
+        index = max(0, len(self.history_pos) - self.buffer//2)
         for i, ball in enumerate(balls):
-            ball.pos = self.positions[i]
-            ball.vel = self.velocities[i]
+            ball.pos = self.history_pos[index][i]
+            ball.vel = self.history_vel[index][i]
     
-    def to_balls(self) -> list[Ball]:
-        """Convert Physics-Engine to list of Balls"""
-        balls = []
-        for index in range(len(self.masses) ):
-            balls.append(Ball(
-                self.radii[index],
-                self.positions[index],
-                self.velocities[index],
-            ))
-        return balls
-
     def from_balls(self, balls:list[Ball]):
         """Apply position/velocity/etc from list of balls"""
         n = len(balls)
@@ -153,6 +163,10 @@ class PhysicsEngine:
             self.velocities[i] = ball.vel
             self.masses[i] = ball.mass
             self.radii[i] = ball.radius
+
+        self.history_pos = self.positions[np.newaxis,:]
+        self.history_vel = self.velocities[np.newaxis,:]
+        self.update_physics()
 
     def kinetic(self):
         vel = np.sum(self.velocities**2, axis=1)

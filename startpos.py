@@ -4,10 +4,10 @@ from random import randint
 
 ARRANGEMENTS = [
     [
-        Ball(20, np.array([400, 300]), np.array([2, 0])),
-        Ball(20, np.array([500, 400]), np.array([0, 2])),
-        Ball(20, np.array([400, 500]), np.array([-2, 0])),
-        Ball(20, np.array([300, 400]), np.array([0, -2])),
+        Ball(20, np.array([400, 300]), np.array([3, 0])),
+        Ball(20, np.array([500, 400]), np.array([0, 3])),
+        Ball(20, np.array([400, 500]), np.array([-3, 0])),
+        Ball(20, np.array([300, 400]), np.array([0, -3])),
     ],
 ]
 

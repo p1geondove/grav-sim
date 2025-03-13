@@ -114,7 +114,7 @@ class Ball:
                 calls.append('dragged_ball')
                 if self.pressed_ctrl:
                     # Snap velocity
-                    diff = self.pos - camera.to_world_pos(np.array(event.pos))
+                    diff = self.pos - camera.to_world_pos(np.array(event.pos)) + grid_size/2
                     diff[0] = diff[0] - diff[0] % grid_size
                     diff[1] = diff[1] - diff[1] % grid_size
                     self.vel = -diff / 30
@@ -241,18 +241,15 @@ class EnergyGraph:
         self.surface = pygame.Surface(self.size, pygame.SRCALPHA)
     
     def update(self, potential, kinetic):
-        # Neue Datenpunkte hinzufügen
         self.potential_data.append(potential)
         self.kinetic_data.append(kinetic)
         self.total_data.append(potential + kinetic)
         
-        # Daten auf max_points begrenzen
         if len(self.potential_data) > self.max_points:
             self.potential_data.pop(0)
             self.kinetic_data.pop(0)
             self.total_data.pop(0)
         
-        # Max-Energie für die Skalierung aktualisieren
         if self.potential_data and self.kinetic_data:
             current_max = max(
                 max(abs(val) for val in self.potential_data),
@@ -260,12 +257,9 @@ class EnergyGraph:
                 max(abs(val) for val in self.total_data)
             )
             
-            # Smoothes Anpassen der max_energy
             if current_max > self.max_energy:
-                # Schnell nach oben anpassen
                 self.max_energy = current_max 
             elif current_max < self.max_energy * 0.5:
-                # Langsam nach unten anpassen
                 self.max_energy = self.max_energy * 0.95
     
     def resize(self, rect):
@@ -312,10 +306,7 @@ class EnergyGraph:
                 kin_pot_polygon = zero_line_points + list(reversed(kinetic_points))
                 pygame.draw.polygon(self.surface, Colors.area_kinetik, kin_pot_polygon)
                 
-                # Linien zeichnen
-                # Nulllinie (dezent)
                 pygame.draw.aalines(self.surface, pygame.Color(180, 180, 180, 100), False, zero_line_points, 1)
-
                 pygame.draw.aalines(self.surface, Colors.potential_energy, False, potential_points, 2)
                 pygame.draw.aalines(self.surface, Colors.kinetic_energy, False, kinetic_points, 2)
                 pygame.draw.aalines(self.surface, Colors.total_energy, False, total_points, 2)

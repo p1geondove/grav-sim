@@ -100,6 +100,11 @@ class Playground:
                                 (int(screen_pos[0]), int(screen_pos[1])), 
                                 radius, 2)
 
+        def history(self):
+            for i in range(len(self.playground.balls)):
+                line = self.playground.physics.history_pos[:, i, :]
+                pygame.draw.aalines(self.surface, 'white', False, self.to_screen_pos(line))
+
         def to_world_pos(self, screen_pos):
             """Convert screen coordinates to world coordinates"""
             screen_pos = np.array(screen_pos, dtype=Var.dtype)
@@ -117,6 +122,7 @@ class Playground:
                 self.grid()
 
             try:
+                # self.history()
                 self.balls()
                 for name, actve in self.playground.infos_states.items():
                     if actve: self.functions[name](self)
@@ -151,6 +157,7 @@ class Playground:
         functions = {
             'center':center,
             'velocity':vel,
+            'paths':history
         }
     
     def __init__(self, window:pygame.Surface):
@@ -175,7 +182,7 @@ class Playground:
         self.solver_method = 'euler'
 
         self.balls, self.start_balls = get_random()
-        self.physics = PhysicsEngine(self.balls)
+        self.physics = PhysicsEngine(self.dt, balls=self.balls)
         self.energy_graph = EnergyGraph((Var.window_size-Var.energy_graph_size, Var.energy_graph_size))
 
         fontheight = Fonts.large.get_height() + Var.pad
@@ -197,8 +204,8 @@ class Playground:
             Slider('dt', 0, self.dt, (Var.pad, int(self.window.height-Var.slider_size[1]-Var.pad), int(Var.slider_size[0]), int(Var.slider_size[1]))),
             Slider('fps', 0, 300, (Var.pad, int(self.window.height-Var.slider_size[1]*2-Var.pad*2), int(Var.slider_size[0]), int(Var.slider_size[1]))),
         ]
-
         self.camera = self.Camera(self)
+        self.reset()
         self.draw()
 
     def draw(self):
@@ -221,13 +228,14 @@ class Playground:
                     self.infos_states[button.text] = not self.infos_states[button.text]
                     button.color = Colors.active if self.infos_states[button.text] else Colors.inactive
                 elif button.text == 'collision':
-                    self.collisions = not self.collisions
-                    button.color = Colors.active if self.collisions else Colors.inactive
+                    self.physics.collision_enabled = not self.physics.collision_enabled
+                    self.physics.from_balls(self.balls)
+                    button.color = Colors.active if self.physics.collision_enabled else Colors.inactive
                 button.draw()
         
         for button in self.buttons_solver:
             if button.handle_event(event):
-                self.solver_method = button.text
+                self.physics.method = self.physics.runge_kutta_step if button.text == 'runge_kutta' else self.physics.euler_step
                 for b in self.buttons_solver:
                     b.color = Colors.active if b is button else Colors.inactive
                     b.draw()
@@ -257,8 +265,8 @@ class Playground:
             elif event.key == K_r:
                 if any(b.hover for b in self.balls): # reset velocity from hovered ball
                     index = [b.hover for b in self.balls].index(True)
-                    self.physics.velocities[index][0] = 0
-                    self.physics.velocities[index][1] = 0
+                    self.balls[index].vel = np.array((0,0),dtype=Var.dtype)
+                    self.physics.from_balls(self.balls)
                     
                 elif self.balls: # if no hovered ball, reset simulation
                     self.reset()
@@ -341,9 +349,8 @@ class Playground:
             return
             
         steps = int(max(1, steps))
-        self.physics.update_physics(self.dt, self.solver_method, self.collisions, steps)
+        self.physics.update_physics(steps, self.dt)
         self.physics.update_balls(self.balls)
-
         self.energy_graph.update(
             self.physics.potential(),
             self.physics.kinetic()
@@ -351,6 +358,6 @@ class Playground:
 
     def reset(self):
         self.balls = get_random(self.start_balls)[0]
-        self.physics = PhysicsEngine(self.balls)
+        self.physics.from_balls(self.balls)
         self.camera.pos = np.array((0,0),Var.dtype)
         self.camera.zoom_val = 1
