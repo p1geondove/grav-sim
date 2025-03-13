@@ -1,12 +1,12 @@
 import pygame
 from playground import Playground
 from const import Var
-import numpy as np
+from util import resource_path
   
 def main(): 
     pygame.font.init()
     window = pygame.display.set_mode(Var.window_size, pygame.SRCALPHA | pygame.RESIZABLE)
-    pygame.display.set_icon(pygame.image.load('assets/logo.ico'))
+    pygame.display.set_icon(pygame.image.load(resource_path('./assets/logo.ico')))
     playground = Playground(window)
     clock = pygame.time.Clock()
 

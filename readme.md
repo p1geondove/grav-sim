@@ -20,6 +20,9 @@ This originally started as a random project i just wanted to do. After i felt li
 
 If you are on **Windows** the fastest way is to head to the releases page on the right and download the lastest **exe**
 
+Note that the .exes are made with `autopytoexe` and will trigger Defender for seeming malicous. This is a common issue i cant solve.
+https://www.reddit.com/r/learnpython/comments/e99bhe/why_does_pyinstaller_trigger_windows_defender/
+
 If you are not on Windows or you just want to use the latest bleeding edge version, here are some steps:
 - Dowload the repo `git clone https://github.com/p1geondove/grav-sim`
 - Move into repo `cd grav-sim`
@@ -38,8 +41,6 @@ I dont have a mac so i dont know what the process there is, but probably very si
 
 # TODO
 
-Physics update: use runge kutta order 4 integration
+Implement other solvers
 
-Add boundary back, rect and circle. Make them be able to wrap or bounce the balls
-
-Right click drag makes a selection box
+Find and solve bugs
