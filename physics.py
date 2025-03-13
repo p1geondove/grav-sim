@@ -10,6 +10,7 @@ class PhysicsEngine:
         self.buffer = buffer # size of buffer. half the buffer is for trajectory, the other for actual history. the "current" state is in the middle
         self.dt = dt
         self.collision_enabled = collisions
+        self.counter = 0
 
         if method is None:
             self.method = self.euler_step
@@ -27,8 +28,8 @@ class PhysicsEngine:
         else:
             self.positions:np.ndarray = np.zeros((1,2),dtype=Var.dtype)
             self.velocities:np.ndarray = np.zeros((1,2),dtype=Var.dtype)
-            self.masses:np.ndarray = np.zeros((1,),dtype=Var.dtype)
-            self.radii:np.ndarray = np.zeros((1,),dtype=Var.dtype)
+            self.masses:np.ndarray = np.ones((1,),dtype=Var.dtype)
+            self.radii:np.ndarray = np.ones((1,),dtype=Var.dtype)
         
         self.history_pos = self.positions[np.newaxis, :] # list of oldest to newest set of positions [t-3, t-2, t-1, t]
         self.history_vel = self.velocities[np.newaxis, :]
@@ -36,22 +37,40 @@ class PhysicsEngine:
 
     def __repr__(self):
         return f'<Phys amt:{len(self.positions)} buf:{len(self.history_pos)}>'
-
+    
     def add_ball(self, ball:Ball):
         """Add ball to engine"""
-        # Füge den Ball zu den aktuellen Zuständen hinzu
-        index = max(0, len(self.history_pos) - self.buffer//2)
-        old_pos = self.history_pos[index:]
+        index = max(0, len(self.history_pos) - self.buffer//2) # get 'current' position
+        
+        old_pos = self.history_pos[index:] # history truncated by its trajectory part
         old_vel = self.history_vel[index:]
-        self.positions = np.concatenate((old_pos[0], [ball.pos]))
-        self.velocities = np.concatenate((old_vel[0], [ball.vel]))
-        new_hist = np.full((len(old_pos), 2), ball.pos)
-        print(len(old_pos))
-        print(len(new_hist))
-        # print(old_pos)
-        self.history_pos = np.concatenate((old_pos, [new_hist]), axis=1)
-        new_hist = np.full((len(old_vel), 2), ball.vel)
-        self.history_vel = np.concatenate((old_vel, [new_hist]), axis=1)
+
+        # Add the new ball's properties to the current state arrays
+        self.positions = np.vstack((self.positions, ball.pos))
+        self.velocities = np.vstack((self.velocities, ball.vel))
+        self.masses = np.append(self.masses, ball.mass)
+        self.radii = np.append(self.radii, ball.radius)
+
+        # Create fake history for the new ball (same position and velocity for all history entries)
+        time_steps = len(old_pos)
+        new_ball_pos_history = np.tile(ball.pos, (time_steps, 1))
+        new_ball_vel_history = np.tile(ball.vel, (time_steps, 1))
+        
+        # Expand the history arrays to include the new ball
+        # For each time step, append the new ball's position/velocity
+        new_history_pos = np.zeros((time_steps, old_pos.shape[1] + 1, 2), dtype=old_pos.dtype)
+        new_history_vel = np.zeros((time_steps, old_vel.shape[1] + 1, 2), dtype=old_vel.dtype)
+        
+        for t in range(time_steps):
+            new_history_pos[t, :-1, :] = old_pos[t]
+            new_history_pos[t, -1, :] = new_ball_pos_history[t]
+            
+            new_history_vel[t, :-1, :] = old_vel[t]
+            new_history_vel[t, -1, :] = new_ball_vel_history[t]
+        
+        self.history_pos = new_history_pos
+        self.history_vel = new_history_vel
+        
         self.update_physics()
 
     def remove_ball(self, index):
@@ -63,7 +82,7 @@ class PhysicsEngine:
         self.radii = np.delete(self.radii, index)
 
     def compute_accelerations(self):
-        """Calculates accelerations used for Runge-Kutta"""
+        """Calculates accelerations"""
         diff = self.positions[:, np.newaxis, :] - self.positions[np.newaxis, :, :]
         distances_sq = np.sum(diff**2, axis=2)
         np.fill_diagonal(distances_sq, 1.0)
@@ -140,18 +159,23 @@ class PhysicsEngine:
             self.method = method
         if collision:
             self.collision_enabled = bool(collision)
-
+        
         for _ in range(steps):
             self.method(self.dt)
-
+        
         self.history_pos = np.concatenate((self.history_pos, [self.positions]))
         self.history_vel = np.concatenate((self.history_vel, [self.velocities]))
-
-        if len(self.history_pos) < self.buffer//2:
-            self.update_physics(steps, dt, method, collision)
-        else:
-            self.history_pos = self.history_pos[-self.buffer:]
-            self.history_vel = self.history_vel[-self.buffer:]
+        
+        while len(self.history_pos) < self.buffer//2:
+            self.counter += 1
+            for _ in range(steps):
+                self.method(self.dt)
+            self.history_pos = np.concatenate((self.history_pos, [self.positions]))
+            self.history_vel = np.concatenate((self.history_vel, [self.velocities]))
+        
+        self.history_pos = self.history_pos[-self.buffer:]
+        self.history_vel = self.history_vel[-self.buffer:]
+        self.counter = 0
 
     def update_balls(self, balls:list[Ball]):
         """Update existing balls position and velicoty"""
@@ -189,7 +213,6 @@ class PhysicsEngine:
         distances_sq = np.sum(diff**2, axis=2)
         np.fill_diagonal(distances_sq, np.inf)
         inv_distances = 1.0 / np.sqrt(distances_sq)
-        # print(distances_sq)
         pair_energies = -Var.G * masses_matrix * inv_distances
         return np.sum(pair_energies) / 2.0
     

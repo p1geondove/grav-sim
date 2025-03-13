@@ -21,4 +21,4 @@ def main():
         pygame.display.set_caption(f'FPS: {clock.get_fps():.0f}')
 
 if __name__ == '__main__':
-    main()
+    main() 
