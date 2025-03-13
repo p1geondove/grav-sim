@@ -7,7 +7,7 @@ import ntimer
 
 class PhysicsEngine:
     def __init__(self, dt:float, method=None, collisions:bool=False, buffer:int=100, balls:list[Ball] | PhysicsEngine = None):
-        self.buffer = buffer
+        self.buffer = buffer # size of buffer. half the buffer is for trajectory, the other for actual history. the "current" state is in the middle
         self.dt = dt
         self.collision_enabled = collisions
 
@@ -30,7 +30,7 @@ class PhysicsEngine:
             self.masses:np.ndarray = np.zeros((1,),dtype=Var.dtype)
             self.radii:np.ndarray = np.zeros((1,),dtype=Var.dtype)
         
-        self.history_pos = self.positions[np.newaxis, :]
+        self.history_pos = self.positions[np.newaxis, :] # list of oldest to newest set of positions [t-3, t-2, t-1, t]
         self.history_vel = self.velocities[np.newaxis, :]
         self.update_physics()
 
@@ -39,10 +39,20 @@ class PhysicsEngine:
 
     def add_ball(self, ball:Ball):
         """Add ball to engine"""
-        self.positions = np.concatenate((self.history_pos[-1], [ball.pos]))
-        self.velocities = np.concatenate((self.history_pos[-1], [ball.vel]))
-        self.masses = np.append(self.masses, ball.mass)
-        self.radii = np.append(self.radii, ball.radius)
+        # Füge den Ball zu den aktuellen Zuständen hinzu
+        index = max(0, len(self.history_pos) - self.buffer//2)
+        old_pos = self.history_pos[index:]
+        old_vel = self.history_vel[index:]
+        self.positions = np.concatenate((old_pos[0], [ball.pos]))
+        self.velocities = np.concatenate((old_vel[0], [ball.vel]))
+        new_hist = np.full((len(old_pos), 2), ball.pos)
+        print(len(old_pos))
+        print(len(new_hist))
+        # print(old_pos)
+        self.history_pos = np.concatenate((old_pos, [new_hist]), axis=1)
+        new_hist = np.full((len(old_vel), 2), ball.vel)
+        self.history_vel = np.concatenate((old_vel, [new_hist]), axis=1)
+        self.update_physics()
 
     def remove_ball(self, index):
         """Remove ball from engine"""

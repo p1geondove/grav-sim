@@ -1,7 +1,7 @@
 # Gravity Simulation
 
 This is a small python script made with `pygame-ce` to simulate Newton gravity.
-This originally started as a random project i just wanted to do. After i felt like i had reached a point i made a small video and uploaded it to the pygame subreddit. It got a bit of traction so uploaded it here on and developed it further and learn about git. Now it hosts 500+ lines of messy undocumented code that only 3am me is able to decipher. But it has turned out kind of nice. No bugs i think and i really love the ui/ux. I mean i hope its as intuitive as i think it is
+This originally started as a random project i just wanted to do. Now it hosts ~1000 lines of messy undocumented code that only 3am me is able to decipher. But it has turned out kind of nice. No bugs i think and i really love the ui/ux. I mean i hope its as intuitive as i think it is
 
 # Controls
 
