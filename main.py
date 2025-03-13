@@ -6,6 +6,7 @@ import numpy as np
 def main(): 
     pygame.font.init()
     window = pygame.display.set_mode(Var.window_size, pygame.SRCALPHA | pygame.RESIZABLE)
+    pygame.display.set_icon(pygame.image.load('assets/logo.ico'))
     playground = Playground(window)
     clock = pygame.time.Clock()
 

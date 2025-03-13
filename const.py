@@ -5,7 +5,7 @@ import numpy as np
 pygame.font.init()
 class Fonts:
     try:
-        font_name = resource_path('AgaveNerdFontMono-Regular.ttf')
+        font_name = resource_path('assets/AgaveNerdFontMono-Regular.ttf')
         pygame.Font(font_name)
     except:
         font_name = pygame.font.get_default_font()
