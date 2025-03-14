@@ -66,7 +66,6 @@ class PhysicsEngine:
         self.velocities = np.delete(self.velocities, index, axis=0)
         self.masses = np.delete(self.masses, index)
         self.radii = np.delete(self.radii, index)
-        # if hasattr(self, 'history_pos') and len(self.history_pos) > 0:
         self.history_pos = np.delete(self.history_pos, index, axis=1)
         self.history_vel = np.delete(self.history_vel, index, axis=1)
         self.update_physics()
