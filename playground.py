@@ -3,6 +3,7 @@ import pygame
 from pygame.locals import *
 import sys
 import numpy as np
+from screeninfo import get_monitors
 
 from physics import PhysicsEngine
 from const import Fonts, Colors, Var
@@ -159,7 +160,8 @@ class Playground:
             except OverflowError:
                 self.playground.reset()
 
-            self.ui()
+            if self.playground.show_hud:
+                self.ui()
 
             return self.surface
 
@@ -184,6 +186,8 @@ class Playground:
         self.pressed_right = False
         self.dragging = False
         self.show_grid = False
+        self.show_hud = False
+        self.fullscreen = False
         self.collisions = False
         
         self.mouse_pos = np.array((0,0),dtype=Var.dtype)
@@ -256,6 +260,7 @@ class Playground:
                     Var.framerate_limit = int(slider.val)
                 elif slider.name == 'dt':
                     self.dt = slider.val
+                    self.physics.dt = slider.val
                 elif slider.name == 'paths':
                     self.physics.buffer = int(slider.val)
                     self.physics.from_balls(self.balls)
@@ -283,7 +288,31 @@ class Playground:
                     
                 elif self.balls: # if no hovered ball, reset simulation
                     self.reset()
-                 
+
+            elif event.key == K_h:
+                self.show_hud = not self.show_hud
+
+            elif event.key == K_F11:
+                self.fullscreen = not self.fullscreen
+                if self.fullscreen:
+                    mon = get_monitors()[0]
+                    print(mon)
+                    self.window = pygame.display.set_mode((mon.width,mon.height), FULLSCREEN)
+                    self.camera.surface = pygame.Surface((mon.width,mon.height))
+                    for idx, slider in enumerate(self.sliders):
+                        slider.rect = pygame.Rect((Var.pad, self.window.height-35*(idx+1), 100, 30))
+            
+                    for button in self.buttons_solver:
+                        button.pos[0] = self.window.width - Fonts.large.size(button.text)[0] - Var.pad
+
+                    self.energy_graph.resize((
+                        self.window.size - Var.energy_graph_size,
+                        Var.energy_graph_size
+                    ))
+                else:
+                    self.window = pygame.display.set_mode(Var.window_size, pygame.SRCALPHA)
+                self.draw()
+
         elif event.type == KEYUP:
             if event.key == K_LCTRL:
                 self.pressed_ctrl = False
@@ -357,12 +386,9 @@ class Playground:
 
         self.show_grid = self.show_grid or self.pressed_ctrl
 
-    def update(self, steps=1):
-        if not self.playing: 
-            return
-            
-        steps = int(max(1, steps))
-        self.physics.update_physics(steps, self.dt)
+    def update(self):
+        if not self.playing: return
+        self.physics.update_physics()
         self.physics.update_balls(self.balls)
         self.energy_graph.update(
             self.physics.potential(),
