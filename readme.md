@@ -9,6 +9,8 @@ This originally started as a random project i just wanted to do. Now it hosts ~1
 |--------------------------|--------------------------------|
 | Space                    | pause / unpause                |
 | R                        | reset simulation / velocity    |
+| H                        | toggle overlay                 |
+| F11                      | toggle fullscreen              |
 | Mouse Left               | change position                |
 | Mouse Right              | change velocity                |
 | Mouse Left + Right       | change radius                  |
