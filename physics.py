@@ -4,7 +4,7 @@ from const import Var
 from ui_elements import Ball
 
 class PhysicsEngine:
-    def __init__(self, dt:float, method=None, collisions:bool=False, buffer:int=100, balls:list[Ball] | PhysicsEngine = None):
+    def __init__(self, dt:float, method=None, collisions:bool=False, buffer:int=500, balls:list[Ball] | PhysicsEngine = None):
         self.buffer = buffer # size of buffer. half the buffer is for trajectory, the other for actual history. the "current" state is in the middle
         self.dt = dt
         self.collision_enabled = collisions
@@ -36,7 +36,7 @@ class PhysicsEngine:
     def __repr__(self):
         return f'<Phys amt:{len(self.positions)} buf:{len(self.history_pos)}>'
     
-    def add_ball(self, ball: Ball):
+    def add_ball(self, ball:Ball):
         """Add ball to engine"""
         index = max(0, len(self.history_pos) - self.buffer // 2)
         history_slice = slice(index, None)
@@ -58,7 +58,7 @@ class PhysicsEngine:
         self.history_vel = new_history_vel
         self.update_physics()
 
-    def remove_ball(self, index):
+    def remove_ball(self, index:int):
         """Remove ball from engine"""
         self.positions = np.delete(self.positions, index, axis=0)
         self.velocities = np.delete(self.velocities, index, axis=0)
@@ -80,7 +80,7 @@ class PhysicsEngine:
         accelerations = np.sum(forces, axis=1) / self.masses[:, np.newaxis]
         return accelerations
 
-    def euler_step(self, dt):
+    def euler_step(self, dt:float):
         """Euler step with collision check"""
         accelerations = self.compute_accelerations()
         self.velocities += accelerations * dt
@@ -88,7 +88,7 @@ class PhysicsEngine:
         if self.collision_enabled:
             self.handle_collisions()
     
-    def runge_kutta_step(self, dt):
+    def runge_kutta_step(self, dt:float):
         """Runge-Kutta step with collisions check"""
         orig_pos = self.positions.copy()
         orig_vel = self.velocities.copy()
