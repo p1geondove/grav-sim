@@ -8,26 +8,21 @@ import random
 from const import Var, Fonts, Colors
 
 class Ball:
-    def __init__(self, radius:float=None, position:np.ndarray=None, velocity:np.ndarray=None, id:int=None):
-        if id is None:
-            self.id = random.randint(1, 999)
-        else:
-            self.id = id
+    def __init__(self, radius:float=None, position:np.ndarray=None, velocity:np.ndarray=None, id:int=None, color:pygame.Color=None):
+        if id is None: self.id = random.randint(1, 999)
+        else: self.id = id
         
-        if radius is None:
-            self.radius = float(random.uniform(5, 50))
-        else: 
-            self.radius = radius
+        if radius is None: self.radius = float(random.uniform(5, 50))
+        else:  self.radius = radius
 
-        if position is None:
-            self.pos = np.array([random.uniform(0, Var.window_size[0]), random.uniform(0, Var.window_size[1])], dtype=np.float64)
-        else: 
-            self.pos = np.array(position, dtype=np.float64)
+        if position is None: self.pos = np.array([random.uniform(0, Var.window_size[0]), random.uniform(0, Var.window_size[1])], dtype=np.float64)
+        else:  self.pos = np.array(position, dtype=np.float64)
 
-        if velocity is None:
-            self.vel = np.array([random.uniform(-1, 1), random.uniform(-1, 1)], dtype=np.float64)
-        else: 
-            self.vel = np.array(velocity, dtype=np.float64)
+        if velocity is None: self.vel = np.array([random.uniform(-1, 1), random.uniform(-1, 1)], dtype=np.float64)
+        else:  self.vel = np.array(velocity, dtype=np.float64)
+
+        if color is None: self.color = pygame.Color.from_hsla(random.uniform(0, 360), 100, 75, 100)
+        else: self.color = color
 
         self.mass = pi * self.radius**2
         self.acc = np.zeros(2, dtype=np.float64)
@@ -39,11 +34,10 @@ class Ball:
         self.hover = False
         self._radius = self.radius
         self.surface = pygame.Surface((int(self.radius*2+1), int(self.radius*2+1)), SRCALPHA)
-        self.color = pygame.Color.from_hsla(random.uniform(0, 360), 100, 75, 100)
         pygame.draw.aacircle(self.surface, self.color, (self.radius, self.radius), self.radius, 2)
 
     def __repr__(self):
-        return f'Ball r:{self.radius} pos:{self.pos[0]:.2f}|{self.pos[1]:.2f} vel:{self.vel[0]:.2f}|{self.vel[1]:.2f}'
+        return f'Ball({self.radius}, {self.pos}, {self.vel}, {self.id}, {self.color})'
 
     @property
     def radius(self) -> float:
