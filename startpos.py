@@ -15,8 +15,6 @@ def get_random(idx=None):
     """ ## Grow a pair
 
     get a random list of balls from `ARRANGEMENTS`
-
-    predefinded in startpos.py
     """
     if idx is None:
         idx = randint(0, len(ARRANGEMENTS)-1)
