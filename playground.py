@@ -210,8 +210,9 @@ class Playground:
         self.buttons_solver[0].draw()
 
         self.sliders = [
-            Slider('dt', 0, self.dt, (Var.pad, int(self.window.height-Var.slider_size[1]-Var.pad), int(Var.slider_size[0]), int(Var.slider_size[1]))),
+            Slider('dt', 0, self.dt*2, (Var.pad, int(self.window.height-Var.slider_size[1]-Var.pad), int(Var.slider_size[0]), int(Var.slider_size[1]))),
             Slider('fps', 0, 300, (Var.pad, int(self.window.height-Var.slider_size[1]*2-Var.pad*2), int(Var.slider_size[0]), int(Var.slider_size[1]))),
+            Slider('paths', 10, 1000, (Var.pad, int(self.window.height-Var.slider_size[1]*3-Var.pad*3), int(Var.slider_size[0]), int(Var.slider_size[1]))),
         ]
         self.camera = self.Camera(self)
         self.reset()
@@ -249,12 +250,15 @@ class Playground:
                     b.color = Colors.active if b is button else Colors.inactive
                     b.draw()
 
-        if self.sliders[0].handle_event(event):
-            self.dt = self.sliders[0].val
-            self.dragging = False
-        
-        if self.sliders[1].handle_event(event):
-            Var.framerate_limit = int(self.sliders[1].val)
+        for slider in self.sliders:
+            if slider.handle_event(event):
+                if slider.name == 'fps':
+                    Var.framerate_limit = int(slider.val)
+                elif slider.name == 'dt':
+                    self.dt = slider.val
+                elif slider.name == 'paths':
+                    self.physics.buffer = int(slider.val)
+                    self.physics.from_balls(self.balls)
             self.dragging = False
 
         if event.type == pygame.QUIT:

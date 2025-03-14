@@ -3,8 +3,6 @@ import numpy as np
 from const import Var
 from ui_elements import Ball
 
-import ntimer
-
 class PhysicsEngine:
     def __init__(self, dt:float, method=None, collisions:bool=False, buffer:int=100, balls:list[Ball] | PhysicsEngine = None):
         self.buffer = buffer # size of buffer. half the buffer is for trajectory, the other for actual history. the "current" state is in the middle
