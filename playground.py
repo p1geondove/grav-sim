@@ -259,7 +259,7 @@ class Playground:
                 elif slider.name == 'paths':
                     self.physics.buffer = int(slider.val)
                     self.physics.from_balls(self.balls)
-            self.dragging = False
+                self.dragging = False
 
         if event.type == pygame.QUIT:
                 pygame.quit()
