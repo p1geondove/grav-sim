@@ -33,7 +33,7 @@ If you are not on Windows or you just want to use the latest bleeding edge versi
 - Optional: upgrade pip
   - Windows `.venv\Scripts\python.exe -m pip install --upgrade pip`
   - Linux `.venv/bin/python.exe -m pip install --upgrade pip`
-- install reqirements
+- install requirements
   - Windows `.venv\Scripts\pip.exe install -r requirements.txt`
   - Linux `.venv/bin/pip install -r requirements.txt`
 - launch
