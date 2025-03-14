@@ -186,7 +186,7 @@ class Playground:
         self.pressed_right = False
         self.dragging = False
         self.show_grid = False
-        self.show_hud = True
+        self.show_hud = False
         self.fullscreen = False
         self.collisions = False
         
@@ -233,7 +233,6 @@ class Playground:
             if calls_ball := ball.handle_event(event, self.grid_size, self.camera):
                 if 'dragged_ball' in calls_ball:
                     self.physics.from_balls(self.balls)
-                    print([b.pos for b in self.balls])
                     self.dragging = False
                 calls.extend(calls_ball)
         
