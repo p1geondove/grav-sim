@@ -1,12 +1,14 @@
 import pygame
 from playground import Playground
 from const import Var
+from util import set_icon
 
 def main(): 
     pygame.font.init()
     window = pygame.display.set_mode(Var.window_size, pygame.SRCALPHA | pygame.RESIZABLE)
     playground = Playground(window)
     clock = pygame.time.Clock()
+    set_icon()
 
     while True:  
         for event in pygame.event.get():
