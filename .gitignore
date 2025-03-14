@@ -3,4 +3,3 @@ output/
 __pycache__/
 ntimer.py
 test.py
-compile.json
