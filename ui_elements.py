@@ -8,7 +8,7 @@ import random
 from const import Var, Fonts, Colors
 
 class Ball:
-    def __init__(self, radius=None, position=None, velocity=None, id=None):
+    def __init__(self, radius:float=None, position:np.ndarray=None, velocity:np.ndarray=None, id:int=None):
         if id is None:
             self.id = random.randint(1, 999)
         else:
@@ -176,7 +176,7 @@ class Button:
         self.surface = self.font.render(self.text, True, self.color)
 
 class Slider:
-    def __init__(self, name, start, end, rect):
+    def __init__(self, name:str, start:float, end:float, rect:pygame.Rect):
         self.name = name
         self.start = start
         self.end = end
@@ -194,7 +194,6 @@ class Slider:
         rect_hori = pygame.Rect(self.size_vert, self.rect.height/2-self.size_hori, self.rect.width-self.size_vert*2, self.size_hori*2)
         rect_vert = pygame.Rect(pos_x, 0, self.size_vert*2, self.rect.height)
         text = Fonts.small.render(f'{self.name}: {self.val:.2f}', True, Colors.text)
-        
         width = self.rect.width + text.get_width()
         self.surface = pygame.Surface((width, self.rect.height), SRCALPHA)
         self.surface.blit(text, (self.rect.width, self.rect.height/2-text.get_height()/2))
@@ -231,42 +230,38 @@ class EnergyGraph:
         self.potential_data = []
         self.kinetic_data = []
         self.total_data = []
-        self.max_energy = 1  # Wird automatisch angepasst
-        
-        # Position und Größe
+        self.max_energy = 1
         self.position = pygame.Rect(rect).topleft
         self.size = pygame.Rect(rect).size
-        
-        # Graph Oberfläche
         self.surface = pygame.Surface(self.size, pygame.SRCALPHA)
-    
+
     def update(self, potential, kinetic):
         self.potential_data.append(potential)
         self.kinetic_data.append(kinetic)
         self.total_data.append(potential + kinetic)
-        
+
         if len(self.potential_data) > self.max_points:
             self.potential_data.pop(0)
             self.kinetic_data.pop(0)
             self.total_data.pop(0)
-        
+
         if self.potential_data and self.kinetic_data:
             current_max = max(
                 max(abs(val) for val in self.potential_data),
                 max(abs(val) for val in self.kinetic_data),
                 max(abs(val) for val in self.total_data)
             )
-            
+
             if current_max > self.max_energy:
                 self.max_energy = current_max 
             elif current_max < self.max_energy * 0.5:
                 self.max_energy = self.max_energy * 0.95
-    
+
     def resize(self, rect):
         self.position = pygame.Rect(rect).topleft
         self.size = pygame.Rect(rect).size
         self.surface = pygame.Surface(self.size, pygame.SRCALPHA)
-    
+
     def draw(self):
         self.surface = pygame.Surface(self.size, pygame.SRCALPHA)
 
@@ -276,7 +271,6 @@ class EnergyGraph:
             x_spacing = graph_area.width / (points_count - 1) if points_count > 1 else 0
             mid_point = graph_area.top + graph_area.height * 0.5
             scale_factor = graph_area.height * 0.45
-
             potential_points = []
             kinetic_points = []
             total_points = []
@@ -285,30 +279,22 @@ class EnergyGraph:
             for i in range(points_count):
                 x = graph_area.left + i * x_spacing
                 zero_line_points.append((x, mid_point))
-                
+
                 if self.max_energy > 0:
-                    pot_y = mid_point - (self.potential_data[-points_count + i] / self.max_energy) * scale_factor
-                    potential_points.append((x, pot_y))
-                    
-                    kin_y = mid_point - (self.kinetic_data[-points_count + i] / self.max_energy) * scale_factor
-                    kinetic_points.append((x, kin_y))
-                    
-                    tot_y = mid_point - (self.total_data[-points_count + i] / self.max_energy) * scale_factor
-                    total_points.append((x, tot_y))
-            
+                    potential_points.append((x, mid_point - (self.potential_data[-points_count + i] / self.max_energy) * scale_factor))
+                    kinetic_points.append((x, mid_point - (self.kinetic_data[-points_count + i] / self.max_energy) * scale_factor))
+                    total_points.append((x, mid_point - (self.total_data[-points_count + i] / self.max_energy) * scale_factor))
+
             if len(potential_points) > 1:
                 pot_polygon = potential_points + list(reversed(total_points))
                 pygame.draw.polygon(self.surface, Colors.area_potential, pot_polygon)
-                
-                total_kin_polygon = total_points + list(reversed(zero_line_points))
-                pygame.draw.polygon(self.surface, Colors.area_total, total_kin_polygon)
-                
+                total_polygon = total_points + list(reversed(zero_line_points))
+                pygame.draw.polygon(self.surface, Colors.area_total, total_polygon)
                 kin_pot_polygon = zero_line_points + list(reversed(kinetic_points))
                 pygame.draw.polygon(self.surface, Colors.area_kinetik, kin_pot_polygon)
-                
                 pygame.draw.aalines(self.surface, pygame.Color(180, 180, 180, 100), False, zero_line_points, 1)
                 pygame.draw.aalines(self.surface, Colors.potential_energy, False, potential_points, 2)
                 pygame.draw.aalines(self.surface, Colors.kinetic_energy, False, kinetic_points, 2)
                 pygame.draw.aalines(self.surface, Colors.total_energy, False, total_points, 2)
-        
+
         return self.surface

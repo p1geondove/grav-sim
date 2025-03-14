@@ -38,48 +38,38 @@ class PhysicsEngine:
     def __repr__(self):
         return f'<Phys amt:{len(self.positions)} buf:{len(self.history_pos)}>'
     
-    def add_ball(self, ball:Ball):
+    def add_ball(self, ball: Ball):
         """Add ball to engine"""
-        index = max(0, len(self.history_pos) - self.buffer//2) # get 'current' position
-        
-        old_pos = self.history_pos[index:] # history truncated by its trajectory part
-        old_vel = self.history_vel[index:]
-
-        # Add the new ball's properties to the current state arrays
+        index = max(0, len(self.history_pos) - self.buffer // 2)
+        history_slice = slice(index, None)
         self.positions = np.vstack((self.positions, ball.pos))
         self.velocities = np.vstack((self.velocities, ball.vel))
         self.masses = np.append(self.masses, ball.mass)
         self.radii = np.append(self.radii, ball.radius)
-
-        # Create fake history for the new ball (same position and velocity for all history entries)
-        time_steps = len(old_pos)
-        new_ball_pos_history = np.tile(ball.pos, (time_steps, 1))
+        time_steps = len(self.history_pos[history_slice])
+        old_ball_count = self.history_pos.shape[1]
+        new_ball_history = np.tile(ball.pos, (time_steps, 1))
         new_ball_vel_history = np.tile(ball.vel, (time_steps, 1))
-        
-        # Expand the history arrays to include the new ball
-        # For each time step, append the new ball's position/velocity
-        new_history_pos = np.zeros((time_steps, old_pos.shape[1] + 1, 2), dtype=old_pos.dtype)
-        new_history_vel = np.zeros((time_steps, old_vel.shape[1] + 1, 2), dtype=old_vel.dtype)
-        
-        for t in range(time_steps):
-            new_history_pos[t, :-1, :] = old_pos[t]
-            new_history_pos[t, -1, :] = new_ball_pos_history[t]
-            
-            new_history_vel[t, :-1, :] = old_vel[t]
-            new_history_vel[t, -1, :] = new_ball_vel_history[t]
-        
+        new_history_pos = np.zeros((time_steps, old_ball_count + 1, 2), dtype=self.history_pos.dtype)
+        new_history_vel = np.zeros((time_steps, old_ball_count + 1, 2), dtype=self.history_vel.dtype)
+        new_history_pos[:, :-1, :] = self.history_pos[history_slice]
+        new_history_vel[:, :-1, :] = self.history_vel[history_slice]
+        new_history_pos[:, -1, :] = new_ball_history
+        new_history_vel[:, -1, :] = new_ball_vel_history
         self.history_pos = new_history_pos
         self.history_vel = new_history_vel
-        
         self.update_physics()
 
     def remove_ball(self, index):
         """Remove ball from engine"""
-        delete = lambda args : np.reshape(np.delete(args[0],(args[1]*2,args[1]*2+1)),(len(args[0])-1,2))
-        self.positions = delete((self.positions, index))
-        self.velocities = delete((self.velocities, index))
+        self.positions = np.delete(self.positions, index, axis=0)
+        self.velocities = np.delete(self.velocities, index, axis=0)
         self.masses = np.delete(self.masses, index)
         self.radii = np.delete(self.radii, index)
+        # if hasattr(self, 'history_pos') and len(self.history_pos) > 0:
+        self.history_pos = np.delete(self.history_pos, index, axis=1)
+        self.history_vel = np.delete(self.history_vel, index, axis=1)
+        self.update_physics()
 
     def compute_accelerations(self):
         """Calculates accelerations"""
