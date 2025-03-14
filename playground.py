@@ -313,6 +313,10 @@ class Playground:
                     self.window = pygame.display.set_mode(Var.window_size, pygame.SRCALPHA)
                 self.draw()
 
+            elif event.key == K_ESCAPE:
+                pygame.quit()
+                sys.exit()
+
         elif event.type == KEYUP:
             if event.key == K_LCTRL:
                 self.pressed_ctrl = False
