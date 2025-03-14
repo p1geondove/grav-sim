@@ -19,10 +19,12 @@ class Playground:
             self.playground:Playground = playground
 
         def move(self, pixel_pos):
+            """Move camera position relative to simulation"""
             pixel_pos = np.array(pixel_pos, dtype=Var.dtype)
             self.pos += pixel_pos * self.zoom_val
 
         def zoom(self, zoom_amt):
+            """Zoom camera in or out relative to simulation"""
             if not 2**-10 < self.zoom_val/2**zoom_amt < 2**5: 
                 return
             
@@ -35,12 +37,27 @@ class Playground:
                 self.pos += mouse_pos * self.zoom_val
                 self.zoom_val /= 2**zoom_amt
 
-        def get_rect(self):
-            window_size = np.array(self.window.get_size(), dtype=Var.dtype)
-            size = window_size / self.zoom_val
-            return Rect(self.pos[0], self.pos[1], size[0], size[1])
+        def to_world_pos(self, screen_pos):
+            """Convert screen coordinates to world coordinates"""
+            screen_pos = np.array(screen_pos, dtype=Var.dtype)
+            return screen_pos * self.zoom_val - self.pos
+
+        def to_screen_pos(self, world_pos):
+            """Convert world coordinates to screen coordinates"""
+            world_pos = np.array(world_pos, dtype=Var.dtype)
+            return (world_pos + self.pos) / self.zoom_val
+
+        def balls(self):
+            """Draw balls"""
+            for ball in self.playground.balls:
+                screen_pos = self.to_screen_pos(ball.pos)
+                radius = ball.radius / self.zoom_val
+                pygame.draw.aacircle(self.surface, ball.color, 
+                                (int(screen_pos[0]), int(screen_pos[1])), 
+                                radius, 2)
 
         def center(self):
+            """Calculate position and draw center of mass"""
             if not len(self.playground.balls): 
                 return
                 
@@ -55,15 +72,19 @@ class Playground:
             pygame.draw.aacircle(self.surface, Colors.center, 
                                 (int(center_screen[0]), int(center_screen[1])), 10, 1)
 
-        def vel(self):
-            for ball in self.playground.balls:
-                start = self.to_screen_pos(ball.pos)
-                end = self.to_screen_pos(ball.pos + ball.vel * 30)
-                pygame.draw.aaline(self.surface, Colors.vel_vector, 
-                                (int(start[0]), int(start[1])), 
-                                (int(end[0]), int(end[1])))
+        def debug_txt(self):
+            """Additional devug text
+            
+            Currently only the amount of balls in the bottom right corner"""
+            amt_txt = Fonts.medium.render(str(len(self.playground.balls)), True, Colors.text)
+            size = np.array(self.surface.get_size(), dtype=Var.dtype)
+            text_size = np.array(amt_txt.get_size(), dtype=Var.dtype)
+            pos = size - text_size - Var.pad
+            self.surface.blit(amt_txt, (int(pos[0]), int(pos[1])))
 
         def grid(self):
+            """Calculate positions for draw points corrosponding to the grid
+            Grid is used for snapping position or velocity for balls to perfect positions"""
             grid_radius = self.zoom_val * min(self.window.get_size()) * 0.3
             mouse_pos = self.to_world_pos(np.array(self.playground.mouse_pos))
             grid_size = self.playground.grid_size
@@ -92,48 +113,16 @@ class Playground:
                 self.surface.set_at((px+1, py), color_around)
                 self.surface.set_at((px, py+1), color_around)
 
-        def balls(self):
-            for ball in self.playground.balls:
-                screen_pos = self.to_screen_pos(ball.pos)
-                radius = ball.radius / self.zoom_val
-                pygame.draw.aacircle(self.surface, ball.color, 
-                                (int(screen_pos[0]), int(screen_pos[1])), 
-                                radius, 2)
-
         def history(self):
+            """Draw history of balls"""
             for i in range(len(self.playground.balls)):
                 line = self.playground.physics.history_pos[:, i, :]
                 pygame.draw.aalines(self.surface, 'white', False, self.to_screen_pos(line))
 
-        def to_world_pos(self, screen_pos):
-            """Convert screen coordinates to world coordinates"""
-            screen_pos = np.array(screen_pos, dtype=Var.dtype)
-            return screen_pos * self.zoom_val - self.pos
-
-        def to_screen_pos(self, world_pos):
-            """Convert world coordinates to screen coordinates"""
-            world_pos = np.array(world_pos, dtype=Var.dtype)
-            return (world_pos + self.pos) / self.zoom_val
-
-        def draw(self):
-            self.surface.fill('grey15')
-
-            if self.playground.dragging or self.playground.pressed_ctrl:
-                self.grid()
-
-            try:
-                # self.history()
-                self.balls()
-                for name, actve in self.playground.infos_states.items():
-                    if actve: self.functions[name](self)
-            except OverflowError:
-                self.playground.reset()
-
-            self.ui()
-
-            return self.surface
-
         def ui(self):
+            """Draw entire ui
+
+            Buttons, Sliders, EnergyGraph, debug_text"""
             for button in self.playground.buttons_debug:
                 self.surface.blit(button.surface, button.pos)
 
@@ -147,12 +136,32 @@ class Playground:
 
             self.debug_txt()
 
-        def debug_txt(self):
-            amt_txt = Fonts.medium.render(str(len(self.playground.balls)), True, Colors.text)
-            size = np.array(self.surface.get_size(), dtype=Var.dtype)
-            text_size = np.array(amt_txt.get_size(), dtype=Var.dtype)
-            pos = size - text_size - Var.pad
-            self.surface.blit(amt_txt, (int(pos[0]), int(pos[1])))
+        def vel(self):
+            """Draw a line for each ball corrosponding to a scaled velocity Vector"""
+            for ball in self.playground.balls:
+                start = self.to_screen_pos(ball.pos)
+                end = self.to_screen_pos(ball.pos + ball.vel * 30)
+                pygame.draw.aaline(self.surface, Colors.vel_vector, 
+                                (int(start[0]), int(start[1])), 
+                                (int(end[0]), int(end[1])))
+
+        def draw(self):
+            """Main draw function"""
+            self.surface.fill('grey15')
+
+            if self.playground.dragging or self.playground.pressed_ctrl:
+                self.grid()
+
+            try:
+                self.balls()
+                for name, actve in self.playground.infos_states.items():
+                    if actve: self.functions[name](self)
+            except OverflowError:
+                self.playground.reset()
+
+            self.ui()
+
+            return self.surface
 
         functions = {
             'center':center,
