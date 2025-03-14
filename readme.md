@@ -5,18 +5,19 @@ This originally started as a random project i just wanted to do. Now it hosts ~1
 
 # Controls
 
-| button                   | action                         |
-|--------------------------|--------------------------------|
-| Space                    | pause / unpause                |
-| R                        | reset simulation / velocity    |
-| H                        | toggle overlay                 |
-| F11                      | toggle fullscreen              |
-| Mouse Left               | change position                |
-| Mouse Right              | change velocity                |
-| Mouse Left + Right       | change radius                  |
-| Wheel                    | change camera zoom / grid size |
-| Wheel Click              | add / remove ball              |
-| ctrl                     | snap to grid                   |
+| button             | action                         |
+|--------------------|--------------------------------|
+| Space              | pause / unpause                |
+| R                  | reset simulation / velocity    |
+| H                  | toggle overlay                 |
+| F11                | toggle fullscreen              |
+| Esc                | Exit                           |
+| Mouse Left         | change position                |
+| Mouse Right        | change velocity                |
+| Mouse Left + Right | change radius                  |
+| Wheel              | change camera zoom / grid size |
+| Wheel Click        | add / remove ball              |
+| ctrl               | snap to grid                   |
 
 # Usage
 
