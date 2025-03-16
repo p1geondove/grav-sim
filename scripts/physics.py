@@ -1,7 +1,7 @@
 from __future__ import annotations
 import numpy as np
-from const import Var
-from ui_elements import Ball
+from scripts.const import Var
+from scripts.ui_elements import Ball
 
 class PhysicsEngine:
     def __init__(self, dt:float, method=None, collisions:bool=False, buffer:int=500, balls:list[Ball] | PhysicsEngine = None):

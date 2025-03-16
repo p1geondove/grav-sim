@@ -5,7 +5,7 @@ from pygame.locals import *
 from math import pi
 import numpy as np
 import random
-from const import Var, Fonts, Colors
+from scripts.const import Var, Fonts, Colors
 
 class Ball:
     def __init__(self, radius:float=None, position:np.ndarray=None, velocity:np.ndarray=None, id:int=None, color:pygame.Color=None):

@@ -14,9 +14,11 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 def set_icon():
+    """set window icon from assets/logo.ico"""
     pygame.display.set_icon(pygame.image.load(resource_path('./assets/logo.ico')))
 
 def get_monitor():
-    from const import Var
+    """init display and get monitor size"""
+    from scripts.const import Var
     pygame.display.init()
     Var.monitor_size = np.array(pygame.display.get_desktop_sizes()[0])

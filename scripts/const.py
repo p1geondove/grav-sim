@@ -1,6 +1,6 @@
 import pygame
-from util import resource_path
 import numpy as np
+from scripts.util import resource_path
 
 pygame.font.init()
 class Fonts:

@@ -1,7 +1,5 @@
 import pygame
-from playground import Playground
-from const import Var
-from util import set_icon, get_monitor
+from scripts import *
 
 def main():
     pygame.font.init()

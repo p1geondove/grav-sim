@@ -1,8 +1,8 @@
-from ui_elements import Ball
 import numpy as np
 import random
 from math import pi
-from const import Var
+from scripts.ui_elements import Ball
+from scripts.const import Var
 
 def get_figure_8(scale:float): # figure 8 orbit (∞). Thanks to Faustino Palmero Ramos (https://www.maths.ed.ac.uk/~ateckent/vacation_reports/Report_Faustino.pdf)
     vx = 0.3471128135672417 * scale # these values are copy pasted from the paper

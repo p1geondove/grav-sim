@@ -4,10 +4,10 @@ from pygame.locals import *
 import sys
 import numpy as np
 
-from physics import PhysicsEngine
-from const import Fonts, Colors, Var
-from ui_elements import Ball, Button, Slider, EnergyGraph
-from startpos import get_random
+from scripts.physics import PhysicsEngine
+from scripts.const import Fonts, Colors, Var
+from scripts.ui_elements import Ball, Button, Slider, EnergyGraph
+from scripts.startpos import get_random
 
 class Playground:
     class Camera:
