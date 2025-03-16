@@ -44,15 +44,15 @@ class Ball:
         return self._radius
     
     @radius.setter
-    def radius(self, val: float):
+    def radius(self, val:float):
         self._radius = val
         self.mass = pi * val**2
 
-    def distance_to(self, other):
+    def distance_to(self, other:Ball):
         """Calculate distance to another ball"""
         return np.linalg.norm(self.pos - other.pos)
 
-    def handle_event(self, event, grid_size, camera):
+    def handle_event(self, event:pygame.Event, grid_size:float, camera):
         """Handle all pygame events"""
         calls = []
 
@@ -154,7 +154,7 @@ class Button:
         self.hover = False
         self.draw()
 
-    def handle_event(self, event):
+    def handle_event(self, event:pygame.Event):
         calls = []
         rect = self.surface.get_rect().move(int(self.pos[0]), int(self.pos[1]))
         if event.type == MOUSEMOTION:
@@ -194,7 +194,7 @@ class Slider:
         pygame.draw.rect(self.surface, Colors.slider_hori, rect_hori, 0, self.size_hori)
         pygame.draw.rect(self.surface, Colors.slider_vert, rect_vert, 0, int(self.size_vert*0.7))
     
-    def handle_event(self, event):
+    def handle_event(self, event:pygame.Event):
         if event.type == MOUSEBUTTONDOWN:
             pos_x = (self.val - self.start) / (self.end - self.start) * (self.rect.width - self.size_vert*2)
             rect = pygame.Rect(pos_x, 0, self.size_vert*2, self.rect.height).move(self.rect.topleft)
@@ -229,7 +229,7 @@ class EnergyGraph:
         self.size = pygame.Rect(rect).size
         self.surface = pygame.Surface(self.size, pygame.SRCALPHA)
 
-    def update(self, potential, kinetic):
+    def update(self, potential:float, kinetic:float):
         self.potential_data.append(potential)
         self.kinetic_data.append(kinetic)
         self.total_data.append(potential + kinetic)
@@ -251,7 +251,7 @@ class EnergyGraph:
             elif current_max < self.max_energy * 0.5:
                 self.max_energy = self.max_energy * 0.95
 
-    def resize(self, rect):
+    def resize(self, rect:pygame.Rect):
         self.position = pygame.Rect(rect).topleft
         self.size = pygame.Rect(rect).size
         self.surface = pygame.Surface(self.size, pygame.SRCALPHA)
