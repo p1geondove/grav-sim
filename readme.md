@@ -42,6 +42,11 @@ If you are not on Windows or you just want to use the latest bleeding edge versi
 
 I dont have a mac so i dont know what the process there is, but probably very similar
 
+# Sample Footage
+
+![100 Balls](./assets/100%20balls.gif)
+![Euler vs. Runge-Kutta](./assets/euler%20vs%20runge-kutta.gif))
+
 # TODO
 
 Implement other solvers
