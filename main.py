@@ -3,7 +3,7 @@ from playground import Playground
 from const import Var
 from util import set_icon, get_monitor
 
-def main(): 
+def main():
     pygame.font.init()
     get_monitor()
     window = pygame.display.set_mode(Var.window_size, pygame.SRCALPHA | pygame.RESIZABLE)
