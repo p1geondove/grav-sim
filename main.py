@@ -2,12 +2,9 @@ import pygame
 from scripts import *
 
 def main():
-    pygame.font.init()
-    get_monitor()
     window = pygame.display.set_mode(Var.window_size, pygame.SRCALPHA | pygame.RESIZABLE)
     playground = Playground(window)
     clock = pygame.time.Clock()
-    set_icon()
 
     while True:  
         for event in pygame.event.get():
