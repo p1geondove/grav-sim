@@ -3,7 +3,6 @@ import pygame
 from pygame.locals import *
 import sys
 import numpy as np
-from screeninfo import get_monitors
 
 from physics import PhysicsEngine
 from const import Fonts, Colors, Var
@@ -295,10 +294,9 @@ class Playground:
             elif event.key == K_F11:
                 self.fullscreen = not self.fullscreen
                 if self.fullscreen:
-                    mon = get_monitors()[0]
-                    print(mon)
-                    self.window = pygame.display.set_mode((mon.width,mon.height), FULLSCREEN)
-                    self.camera.surface = pygame.Surface((mon.width,mon.height))
+                    self.window = pygame.display.set_mode(Var.monitor_size, FULLSCREEN)
+                    self.camera.surface = pygame.Surface(Var.monitor_size)
+
                     for idx, slider in enumerate(self.sliders):
                         slider.rect = pygame.Rect((Var.pad, self.window.height-35*(idx+1), 100, 30))
             
