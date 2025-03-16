@@ -1,6 +1,6 @@
 # Gravity Simulation
 
-This is a small python script made with `pygame-ce` to simulate Newton gravity.
+This is a small python script made with `pygame-ce` and `numpy` to simulate Newton gravity.
 This originally started as a random project i just wanted to do. Now it hosts ~1000 lines of messy undocumented code that only 3am me is able to decipher. But it has turned out kind of nice. No bugs i think and i really love the ui/ux. I mean i hope its as intuitive as i think it is
 
 # Controls
@@ -33,7 +33,7 @@ If you are not on Windows or you just want to use the latest bleeding edge versi
 - Optional: upgrade pip
   - Windows `.venv\Scripts\python.exe -m pip install --upgrade pip`
   - Linux `.venv/bin/python.exe -m pip install --upgrade pip`
-- install reqirements
+- install requirements
   - Windows `.venv\Scripts\pip.exe install -r requirements.txt`
   - Linux `.venv/bin/pip install -r requirements.txt`
 - launch
@@ -45,5 +45,7 @@ I dont have a mac so i dont know what the process there is, but probably very si
 # TODO
 
 Implement other solvers
+
+Add more start orbits
 
 Find and solve bugs
