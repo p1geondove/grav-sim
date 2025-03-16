@@ -193,7 +193,8 @@ class Playground:
         self.infos_states = {n:False for n in self.Camera.functions}
         self.solver_method = 'euler'
 
-        self.balls, self.start_balls = get_random()
+        self.balls = get_random()
+        self.start_balls = [b.copy() for b in self.balls]
         self.physics = PhysicsEngine(self.dt, balls=self.balls)
         self.energy_graph = EnergyGraph((Var.window_size-Var.energy_graph_size, Var.energy_graph_size))
 
@@ -399,7 +400,7 @@ class Playground:
         )
 
     def reset(self):
-        self.balls = get_random(self.start_balls)[0]
+        self.balls = [b.copy() for b in self.start_balls]
         self.physics.from_balls(self.balls)
         self.camera.pos = np.array((0,0),Var.dtype)
         self.camera.zoom_val = 1
