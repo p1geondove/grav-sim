@@ -216,11 +216,6 @@ class Slider:
                 self.draw()
                 return ['draw']
 
-    def copy(self):
-        slider = Slider(self.name, self.start, self.end, self.rect)
-        slider.val = self.val
-        return slider
-
 class EnergyGraph:
     def __init__(self, rect: pygame.Rect, max_points=150):
         self.max_points = max_points
