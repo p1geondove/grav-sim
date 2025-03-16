@@ -12,7 +12,6 @@ if __name__ == '__main__':
 
         playground.update()
         playground.draw()
-        print([b.vel for b in playground.balls])
         pygame.display.flip()
         clock.tick(Var.framerate_limit)
         pygame.display.set_caption(f'FPS: {clock.get_fps():.0f}')

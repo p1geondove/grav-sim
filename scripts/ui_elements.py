@@ -170,17 +170,20 @@ class Button:
         self.surface = self.font.render(self.text, True, self.color)
 
 class Slider:
-    def __init__(self, name:str, start:float, end:float, rect:pygame.Rect):
+    def __init__(self, name:str, start:float, end:float, rect:pygame.Rect, val:float=None):
         self.name = name
         self.start = start
         self.end = end
         self.rect = pygame.Rect(rect)
-        self.val = (end - start) / 2
         self.pressed = False
         self.hover = False
         self.size_hori = 2
         self.size_vert = 4
         self.surface = pygame.Surface(self.rect.size)
+        if val is None:
+            self.val = (end - start) / 2
+        else:
+            self.val = float(val)
         self.draw()
 
     def draw(self):
