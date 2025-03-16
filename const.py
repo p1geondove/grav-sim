@@ -47,6 +47,7 @@ class Colors:
 
 class Var:
     window_size = np.array((800, 800)) # standard window size in pixel
+    monitor_size = np.array((1920,1080)) # default size of monitor, used for fullscreen, changed to real resolution on startup
     slider_size = (100, 20) # x and y size of the sliders in pixel
     button_font = Fonts.large # font for the buttons
     framerate_limit = 150 # fps limit, because i feel like its a good idea idk...
@@ -56,4 +57,4 @@ class Var:
     cicrcle_lightness = 75 # l value from hsLa used for making circle a nice pastel color
     dampening = 0.998 # used in elastic collision only
     pad = 5 # 5 pixel padding for ui elements (except ball ofc)
-    energy_graph_size = np.array((200, 150))
+    energy_graph_size = np.array((200, 150)) # width and height of energy graph
