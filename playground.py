@@ -286,7 +286,7 @@ class Playground:
                 self.pressed_shift = True
 
             elif event.key == K_r:
-                if self.pressed_shift:
+                if self.pressed_shift: # get new arrangement of balls
                     self.start_balls = get_random()
                     self.reset()
 
@@ -305,20 +305,9 @@ class Playground:
                 self.fullscreen = not self.fullscreen
                 if self.fullscreen:
                     self.window = pygame.display.set_mode(Var.monitor_size, FULLSCREEN)
-                    self.camera.surface = pygame.Surface(Var.monitor_size)
-
-                    for idx, slider in enumerate(self.sliders):
-                        slider.rect = pygame.Rect((Var.pad, self.window.height-35*(idx+1), 100, 30))
-            
-                    for button in self.buttons_solver:
-                        button.pos[0] = self.window.width - Fonts.large.size(button.text)[0] - Var.pad
-
-                    self.energy_graph.resize((
-                        self.window.size - Var.energy_graph_size,
-                        Var.energy_graph_size
-                    ))
                 else:
-                    self.window = pygame.display.set_mode(Var.window_size, pygame.SRCALPHA)
+                    self.window = pygame.display.set_mode(Var.window_size, pygame.SRCALPHA | pygame.RESIZABLE)
+                self.resize()
                 self.draw()
 
             elif event.key == K_ESCAPE:
@@ -386,18 +375,7 @@ class Playground:
                 self.camera.move(event.rel)
 
         elif event.type == VIDEORESIZE:
-            self.camera.surface = pygame.Surface(event.size)
-
-            for idx, slider in enumerate(self.sliders):
-                slider.rect = pygame.Rect((Var.pad, self.window.height-35*(idx+1), 100, 30))
-    
-            for button in self.buttons_solver:
-                button.pos[0] = self.window.width - Fonts.large.size(button.text)[0] - Var.pad
-
-            self.energy_graph.resize((
-                self.window.size - Var.energy_graph_size,
-                Var.energy_graph_size
-            ))
+            self.resize()
 
         self.show_grid = self.show_grid or self.pressed_ctrl
 
@@ -415,3 +393,17 @@ class Playground:
         self.physics.from_balls(self.balls)
         self.camera.pos = np.array((0,0),Var.dtype)
         self.camera.zoom_val = 1
+
+    def resize(self):
+        self.camera.surface = self.window.copy()
+
+        for idx, slider in enumerate(self.sliders):
+            slider.rect = pygame.Rect((Var.pad, self.window.height-35*(idx+1), 100, 30))
+        
+        for button in self.buttons_solver:
+            button.pos[0] = self.window.width - Fonts.large.size(button.text)[0] - Var.pad
+
+        self.energy_graph.resize((
+            self.window.size - Var.energy_graph_size,
+            Var.energy_graph_size
+        ))
