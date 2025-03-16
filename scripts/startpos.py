@@ -30,10 +30,15 @@ def get_ngon(amount:int):
     velocities = velocity_scale * np.column_stack((-np.sin(angles), np.cos(angles)))
     return [Ball(mass, pos, vel) for pos, vel in zip(positions, velocities)]
 
-def get_random():
+def get_random() -> list[Ball]:
     """ ## Grow a pair
 
     Get a list of balls in a random orbit
     """
     arrangements = [get_figure_8(13)] + [get_ngon(x) for x in range(2,10)]
+    arrangements.append([
+        Ball(75, (380, 400), (0, 1)),
+        Ball(20, (680, 400), (0, -10.66)),
+        Ball(20, (720, 400), (0, -3.33))
+    ])
     return random.choice(arrangements)

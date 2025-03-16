@@ -1,8 +1,8 @@
 from __future__ import annotations
-import pygame
-from pygame.locals import *
 import sys
 import numpy as np
+import pygame
+from pygame.locals import *
 
 from scripts.physics import PhysicsEngine
 from scripts.const import Fonts, Colors, Var
@@ -176,7 +176,6 @@ class Playground:
 
         self.dt = 0.03
         self.grid_size = 20
-        self.trail_size = 300
 
         self.playing = False
         self.pressed_alt = False
@@ -217,8 +216,9 @@ class Playground:
         self.sliders = [
             Slider('dt', 0, self.dt*2, (Var.pad, int(self.window.height-Var.slider_size[1]-Var.pad), int(Var.slider_size[0]), int(Var.slider_size[1]))),
             Slider('fps', 0, 300, (Var.pad, int(self.window.height-Var.slider_size[1]*2-Var.pad*2), int(Var.slider_size[0]), int(Var.slider_size[1]))),
-            Slider('paths', 10, 1000, (Var.pad, int(self.window.height-Var.slider_size[1]*3-Var.pad*3), int(Var.slider_size[0]), int(Var.slider_size[1]))),
+            Slider('paths', 10, 1000, (Var.pad, int(self.window.height-Var.slider_size[1]*3-Var.pad*3), int(Var.slider_size[0]), int(Var.slider_size[1])),10),
         ]
+
         self.camera = self.Camera(self)
         self.reset()
         self.draw()
@@ -263,6 +263,7 @@ class Playground:
                 elif slider.name == 'dt':
                     self.dt = slider.val
                     self.physics.dt = slider.val
+                    self.physics.from_balls(self.balls)
                 elif slider.name == 'paths':
                     self.physics.buffer = int(slider.val)
                     self.physics.from_balls(self.balls)

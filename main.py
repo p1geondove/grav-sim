@@ -1,7 +1,7 @@
-import pygame
-from scripts import *
+if __name__ == '__main__':
+    import pygame # >:)
+    from scripts import *
 
-def main():
     window = pygame.display.set_mode(Var.window_size, pygame.SRCALPHA | pygame.RESIZABLE)
     playground = Playground(window)
     clock = pygame.time.Clock()
@@ -12,9 +12,7 @@ def main():
 
         playground.update()
         playground.draw()
+        print([b.vel for b in playground.balls])
         pygame.display.flip()
         clock.tick(Var.framerate_limit)
         pygame.display.set_caption(f'FPS: {clock.get_fps():.0f}')
-
-if __name__ == '__main__':
-    main() 
