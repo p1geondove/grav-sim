@@ -45,7 +45,7 @@ I dont have a mac so i dont know what the process there is, but probably very si
 # Sample Footage
 
 ![100 Balls](./assets/100%20balls.gif)
-![Euler vs. Runge-Kutta](./assets/euler%20vs%20runge-kutta.gif))
+![Euler vs. Runge-Kutta](./assets/euler%20vs%20runge-kutta.gif)
 
 # TODO
 
