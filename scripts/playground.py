@@ -170,12 +170,10 @@ class Playground:
             'paths':history
         }
     
-    def __init__(self, window:pygame.Surface):
-        self.window = window
-        self.domain = window.get_rect()
-
+    def __init__(self):
+        self.window = pygame.display.set_mode(Var.window_size, pygame.SRCALPHA | pygame.RESIZABLE)
         self.dt = 0.03
-        self.grid_size = 20
+        self.grid_size = 10
 
         self.playing = False
         self.pressed_alt = False
@@ -187,19 +185,16 @@ class Playground:
         self.show_grid = False
         self.show_hud = False
         self.fullscreen = False
-        self.collisions = False
         
         self.mouse_pos = np.array((0,0),dtype=Var.dtype)
         self.infos_states = {n:False for n in self.Camera.functions}
         self.solver_method = 'euler'
-
         self.balls = get_random()
         self.start_balls = [b.copy() for b in self.balls]
         self.physics = PhysicsEngine(self.dt, balls=self.balls)
         self.energy_graph = EnergyGraph((Var.window_size-Var.energy_graph_size, Var.energy_graph_size))
 
         fontheight = Fonts.large.get_height() + Var.pad
-        
         self.buttons_debug:list[Button] = []
         for y, (name, state) in enumerate(self.infos_states.items()):
             color = Colors.active if state else Colors.inactive
@@ -222,9 +217,6 @@ class Playground:
         self.camera = self.Camera(self)
         self.reset()
         self.draw()
-
-    def draw(self):
-        self.window.blit(self.camera.draw(), (0,0))
 
     def handle_event(self, event:pygame.Event):
         calls = []
@@ -380,7 +372,11 @@ class Playground:
 
         self.show_grid = self.show_grid or self.pressed_ctrl
 
+    def draw(self):
+        self.window.blit(self.camera.draw(), (0,0))
+
     def update(self):
+        self.draw()
         if not self.playing: return
         self.physics.update_physics()
         self.physics.update_balls(self.balls)

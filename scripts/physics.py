@@ -4,7 +4,7 @@ from scripts.const import Var
 from scripts.ui_elements import Ball
 
 class PhysicsEngine:
-    def __init__(self, dt:float, method=None, collisions:bool=False, buffer:int=500, balls:list[Ball] | PhysicsEngine = None):
+    def __init__(self, dt:float, method=None, collisions:bool=False, buffer:int=10, balls:list[Ball] | PhysicsEngine = None):
         self.buffer = buffer # size of buffer. half the buffer is for trajectory, the other for actual history. the "current" state is in the middle
         self.dt = dt
         self.collision_enabled = collisions
