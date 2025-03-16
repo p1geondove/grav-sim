@@ -8,7 +8,6 @@ class PhysicsEngine:
         self.buffer = buffer # size of buffer. half the buffer is for trajectory, the other for actual history. the "current" state is in the middle
         self.dt = dt
         self.collision_enabled = collisions
-        self.counter = 0
 
         if method is None:
             self.method = self.euler_step
@@ -85,8 +84,6 @@ class PhysicsEngine:
         accelerations = self.compute_accelerations()
         self.velocities += accelerations * dt
         self.positions += self.velocities * dt
-        if self.collision_enabled:
-            self.handle_collisions()
     
     def runge_kutta_step(self, dt:float):
         """Runge-Kutta step with collisions check"""
@@ -113,12 +110,10 @@ class PhysicsEngine:
         
         self.positions = orig_pos + (dt/6.0) * (k1_vel + 2*k2_vel + 2*k3_vel + k4_vel)
         self.velocities = orig_vel + (dt/6.0) * (k1_acc + 2*k2_acc + 2*k3_acc + k4_acc)
-        
-        if self.collision_enabled:
-            self.handle_collisions()
 
     def handle_collisions(self):
         """Handles collisions between balls as perfect elastic collision"""
+        if not self.collision_enabled: return
         diff = self.positions[:, np.newaxis, :] - self.positions[np.newaxis, :, :]
         distances:np.ndarray = np.linalg.norm(diff, axis=-1)
         combined_radii = self.radii[:, np.newaxis] + self.radii[np.newaxis, :]
@@ -140,29 +135,28 @@ class PhysicsEngine:
    
     def update_physics(self, steps=Var.steps_per_draw, dt:float=None, method:function=None, collision:bool=None):
         """Update physics"""
+        def step():
+            for _ in range(steps):
+                self.method(self.dt)
+                self.handle_collisions()
+            
+            self.history_pos = np.concatenate((self.history_pos, [self.positions]))
+            self.history_vel = np.concatenate((self.history_vel, [self.velocities]))
+
         if dt:
             self.dt = float(dt)
         if method:
             self.method = method
         if collision:
             self.collision_enabled = bool(collision)
-        
-        for _ in range(steps):
-            self.method(self.dt)
-        
-        self.history_pos = np.concatenate((self.history_pos, [self.positions]))
-        self.history_vel = np.concatenate((self.history_vel, [self.velocities]))
+
+        step()
         
         while len(self.history_pos) < self.buffer//2:
-            self.counter += 1
-            for _ in range(steps):
-                self.method(self.dt)
-            self.history_pos = np.concatenate((self.history_pos, [self.positions]))
-            self.history_vel = np.concatenate((self.history_vel, [self.velocities]))
+            step()
         
         self.history_pos = self.history_pos[-self.buffer:]
         self.history_vel = self.history_vel[-self.buffer:]
-        self.counter = 0
 
     def update_balls(self, balls:list[Ball]):
         """Update existing balls position and velicoty"""
