@@ -252,6 +252,7 @@ class Playground:
                 for b in self.buttons_solver:
                     b.color = Colors.active if b is button else Colors.inactive
                     b.draw()
+                self.physics.from_balls(self.balls)
 
         for slider in self.sliders:
             if slider.handle_event(event):
