@@ -181,6 +181,7 @@ class Playground:
         self.playing = False
         self.pressed_alt = False
         self.pressed_ctrl = False
+        self.pressed_shift = False
         self.pressed_left = False
         self.pressed_right = False
         self.dragging = False
@@ -281,12 +282,19 @@ class Playground:
             elif event.key == K_LALT:
                 self.pressed_alt = True
 
+            elif event.key == K_LSHIFT:
+                self.pressed_shift = True
+
             elif event.key == K_r:
-                if any(b.hover for b in self.balls): # reset velocity from hovered ball
+                if self.pressed_shift:
+                    self.start_balls = get_random()
+                    self.reset()
+
+                elif any(b.hover for b in self.balls): # reset velocity from hovered ball
                     index = [b.hover for b in self.balls].index(True)
                     self.balls[index].vel = np.array((0,0),dtype=Var.dtype)
                     self.physics.from_balls(self.balls)
-                    
+                        
                 elif self.balls: # if no hovered ball, reset simulation
                     self.reset()
 
@@ -323,6 +331,9 @@ class Playground:
 
             elif event.key == K_LALT:
                 self.pressed_alt = False
+
+            elif event.key == K_LSHIFT:
+                self.pressed_shift = False
 
         elif event.type == MOUSEBUTTONDOWN:
             if event.button == 1:
